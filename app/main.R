@@ -51,7 +51,7 @@ ui <- function(id) {
       ui_facteurs(ns("facteurs"))
     ),
     nav_panel(
-      title = tagList(bs_icon("graph-up-arrow"), " Analyse avancee"),
+      title = tagList(bs_icon("graph-up-arrow"), " Statistiques approfondies"),
       ui_analyse(ns("analyse"))
     ),
     nav_spacer(),

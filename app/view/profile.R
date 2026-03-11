@@ -271,7 +271,7 @@ server_profile <- function(id, app_data) {
       regions_sel <- input$regions
       rec <- dplyr::case_when(
         length(gravite_sel) == 1 && gravite_sel == "Mortel" ~
-          "Analyse avancee — Score risque",
+          "Statistiques approfondies — Score risque",
         length(gravite_sel) == 1 && gravite_sel == "Grave"  ~
           "Facteurs de risque",
         length(regions_sel) > 0 && length(regions_sel) <= 3 ~

@@ -212,7 +212,7 @@ ui_about <- function(id) {
                     "Impact de la lumi\u00e8re, de la météo, de la surface, du type de route sur la gravit\u00e9.")
               ),
               div(class = "onglet-card",
-                div(class = "onglet-card-title", bs_icon("graph-up-arrow"), " Analyse avanc\u00e9e"),
+                div(class = "onglet-card-title", bs_icon("graph-up-arrow"), " Statistiques approfondies"),
                 div(class = "onglet-card-desc",
                     "Segmentation territoriale (k-means), score composite fond\u00e9 sur les corr\u00e9lations empiriques, ACM.")
               )
@@ -658,7 +658,7 @@ ui_about <- function(id) {
                 div(class = "glossaire-term", "Loess (courbe de tendance)"),
                 div(class = "glossaire-def",
                     "Courbe de r\u00e9gression locale qui r\u00e9sume la tendance g\u00e9n\u00e9rale d\u2019un nuage de points ",
-                    "sans imposer de forme lin\u00e9aire. Utilis\u00e9e dans la section analyse avanc\u00e9e.")),
+                    "sans imposer de forme lin\u00e9aire. Utilis\u00e9e dans la section statistiques approfondies.")),
               div(class = "glossaire-item",
                 div(class = "glossaire-term", "Normalisation (scale)"),
                 div(class = "glossaire-def",
@@ -784,7 +784,7 @@ ui_about <- function(id) {
             div(class = "about-section-title", bs_icon("clock-history"), " Versions"),
             div(class = "about-info-box",
               tags$b("v4.0"), " — Mars 2026 — Refactorisation compl\u00e8te vers architecture rhino + bslib, ",
-              "analyse avanc\u00e9e (clustering, ACM, \u00e9volution temporelle), insights calcul\u00e9s dynamiquement.", tags$br(),
+              "statistiques approfondies (clustering, ACM, \u00e9volution temporelle), insights calcul\u00e9s dynamiquement.", tags$br(),
               tags$b("v3.x"), " — 2025 — Architecture bs4Dash monolithique.", tags$br(),
               tags$b("v1\u20132"), " — 2024 — Prototypes exploratoires."
             )

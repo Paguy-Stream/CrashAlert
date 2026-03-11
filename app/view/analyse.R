@@ -160,7 +160,7 @@ ui_analyse <- function(id) {
     div(class = "ana-topbar",
       div(style="display:flex;align-items:center;gap:16px;",
         div(style="font-weight:700;color:#1b3a6b;font-size:14px;",
-            bs_icon("graph-up-arrow"), " Analyse avancee — France metropolitaine 2015-2024"),
+            bs_icon("graph-up-arrow"), " Statistiques approfondies — France metropolitaine 2015-2024"),
         div(style="color:#6c757d;font-size:12px;",
             bs_icon("info-circle"),
             " Clustering k-means | Score de risque composite | ACM")
