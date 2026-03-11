@@ -1,0 +1,20 @@
+# Données lourdes
+data_propre/accidents_final_light.rds
+data_propre/*.rds
+
+# Renv (librairie locale, pas à versionner)
+renv/library/
+renv/staging/
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+
+# Outputs temporaires
+app/report/*.html
+app/report/*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
