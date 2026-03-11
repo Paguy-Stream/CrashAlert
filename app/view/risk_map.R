@@ -1,6 +1,6 @@
 # app/view/risk_map.R
 box::use(
-  shiny[NS, moduleServer, tags, tagList, uiOutput, renderUI,
+  shiny[NS, moduleServer, tags, tagList, uiOutput, renderUI, p, strong,
         textOutput, renderText, HTML, div, span, h5, selectInput,
         updateSelectInput, observe, reactive, observeEvent, req,
         withProgress, incProgress, showModal, modalDialog, modalButton,
@@ -11,7 +11,7 @@ box::use(
           providers, setView, addLegend, colorNumeric, addPolygons,
           highlightOptions, labelOptions],
   leaflet.extras[addFullscreenControl],
-  plotly[plotlyOutput, renderPlotly, plot_ly, layout],
+  plotly[plotlyOutput, renderPlotly, plot_ly, layout, add_trace],
   DT[DTOutput, renderDT, datatable, formatStyle, styleInterval],
   dplyr[filter, mutate, arrange, desc, slice_head, case_when,
         group_by, summarise, first, left_join, select, rename, pull, n,
@@ -53,12 +53,15 @@ box::use(
       taux_mortalite = round(sum(nb_mortels) / sum(nb_accidents) * 100, 2),
       .groups        = "drop"
     ) |>
-    dplyr::mutate(classe_gravite = dplyr::case_when(
-      taux_mortalite >= 10 ~ "Très élevée",
-      taux_mortalite >=  5 ~ "Élevée",
-      taux_mortalite >=  2 ~ "Moyenne",
-      TRUE                 ~ "Faible"
-    ))
+    dplyr::mutate(
+      classe_gravite = dplyr::case_when(
+        taux_mortalite >= 10 ~ "Très élevée",
+        taux_mortalite >=  5 ~ "Élevée",
+        taux_mortalite >=  2 ~ "Moyenne",
+        TRUE                 ~ "Faible"
+      ),
+      indice_surmortalite = round(taux_mortalite / 5.66 * 100, 1)
+    )
 }
 
 #' @export
@@ -93,6 +96,12 @@ ui_risk_map <- function(id) {
 
     # Topbar metriques
     div(class = "risk-topbar",
+      div(style="display:flex;align-items:center;gap:10px;margin-bottom:8px;",
+        bs_icon("calendar3"),
+        tags$span(style="font-size:13px;font-weight:600;color:#1b3a6b;", "Periode :"),
+        selectInput(ns("annee_global"), label=NULL,
+          choices=c("Toute la periode"="all"), selected="all", width="180px")
+      ),
       div(class = "risk-metric-btns",
         tags$button(
           id = ns("m_mortalite"), class = "metric-btn active",
@@ -113,6 +122,11 @@ ui_risk_map <- function(id) {
           id = ns("m_tues"), class = "metric-btn",
           onclick = sprintf("Shiny.setInputValue('%s','nb_tues')", ns("metric")),
           bs_icon("person-x"), " Tues (30j)"
+        ),
+        tags$button(
+          id = ns("m_indice"), class = "metric-btn",
+          onclick = sprintf("Shiny.setInputValue('%s','indice_surmortalite')", ns("metric")),
+          bs_icon("graph-up-arrow"), " Indice surmortalite"
         )
       ),
       div(style = "color:#6c757d;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
@@ -195,6 +209,28 @@ ui_risk_map <- function(id) {
       card(
         card_header(tagList(bs_icon("globe"), " Outre-mer")),
         card_body(DTOutput(ns("domtom_table")))
+      ),
+
+      tags$div(class = "mt-3"),
+
+      card(full_screen = TRUE,
+        card_header(tagList(bs_icon("arrow-left-right"), " Comparaison de 2 departements")),
+        card_body(
+          div(style = "display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;",
+
+            div(style = "flex:1;min-width:200px;",
+              tags$label("Departement A", style="font-weight:600;font-size:13px;"),
+              selectInput(ns("comp_dept_a"), label=NULL, choices=NULL, width="100%")
+            ),
+            div(style = "flex:1;min-width:200px;",
+              tags$label("Departement B", style="font-weight:600;font-size:13px;"),
+              selectInput(ns("comp_dept_b"), label=NULL, choices=NULL, width="100%")
+            )
+          ),
+          plotlyOutput(ns("comp_radar"), height = "380px"),
+          tags$div(class = "mt-3"),
+          uiOutput(ns("comp_summary"))
+        )
       )
     )
   )
@@ -204,8 +240,43 @@ ui_risk_map <- function(id) {
 server_risk_map <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
+    # Init filtre année global
+    observe({
+      ann_vals <- as.character(sort(unique(app_data$accidents_dashboard$annee)))
+      annees <- c(c("Toute la periode"="all"), stats::setNames(ann_vals, ann_vals))
+      updateSelectInput(session, "annee_global", choices=annees, selected="all")
+    })
+
     dept_data <- reactive({
-      .prepare_dept(app_data$agg_departement)
+      ann <- input$annee_global
+      d <- if (is.null(ann) || ann == "all") {
+        app_data$accidents_dashboard
+      } else {
+        app_data$accidents_dashboard |>
+          dplyr::filter(as.character(annee) == ann)
+      }
+      d |>
+        dplyr::mutate(dep_clean = as.character(dep)) |>
+        dplyr::group_by(dep_clean) |>
+        dplyr::summarise(
+          departement    = dplyr::first(as.character(departement)),
+          region         = dplyr::first(as.character(region)),
+          nb_accidents   = dplyr::n(),
+          nb_mortels     = sum(gravite_accident == "Mortel", na.rm=TRUE),
+          nb_graves      = sum(gravite_accident == "Grave",  na.rm=TRUE),
+          nb_tues        = sum(nb_tues, na.rm=TRUE),
+          taux_mortalite = round(sum(gravite_accident == "Mortel", na.rm=TRUE) / dplyr::n() * 100, 2),
+          .groups        = "drop"
+        ) |>
+        dplyr::mutate(
+          classe_gravite = dplyr::case_when(
+            taux_mortalite >= 10 ~ "Très élevée",
+            taux_mortalite >=  5 ~ "Élevée",
+            taux_mortalite >=  2 ~ "Moyenne",
+            TRUE                 ~ "Faible"
+          ),
+          indice_surmortalite = round(taux_mortalite / 5.66 * 100, 1)
+        )
     })
 
     # Peupler le sélecteur région
@@ -297,10 +368,11 @@ server_risk_map <- function(id, app_data) {
 
     metric_label <- reactive({
       switch(metric(),
-        taux_mortalite = "Taux mortalite (%)",
-        nb_accidents   = "Nb accidents",
-        nb_mortels     = "Nb mortels",
-        nb_tues        = "Tues (30j)"
+        taux_mortalite      = "Taux mortalite (%)",
+        nb_accidents        = "Nb accidents",
+        nb_mortels          = "Nb mortels",
+        nb_tues             = "Tues (30j)",
+        indice_surmortalite = "Indice surmortalite (France=100)"
       )
     })
 
@@ -314,8 +386,14 @@ server_risk_map <- function(id, app_data) {
       geo  <- merge(geo, d, by.x = "code", by.y = "dep_clean", all.x = TRUE)
       vals_num <- suppressWarnings(as.numeric(geo[[m]]))
 
+      # Palette adaptée : indice centré sur 100, autres métriques classiques
+      palette_colors <- if (m == "indice_surmortalite") {
+        c("#2166ac","#92c5de","#f7f7f7","#f4a582","#d6604d","#b2182b")
+      } else {
+        c("#d4edda","#fff3cd","#ffd6a5","#f8d7da","#dc3545")
+      }
       pal <- colorNumeric(
-        palette  = c("#d4edda", "#fff3cd", "#ffd6a5", "#f8d7da", "#dc3545"),
+        palette  = palette_colors,
         domain   = vals_num,
         na.color = "#cccccc"
       )
@@ -479,5 +557,89 @@ server_risk_map <- function(id, app_data) {
       }
     )
 
+
+    # Comparaison 2 departements — init selects
+    observe({
+      ann_vals <- as.character(sort(unique(app_data$accidents_dashboard$annee)))
+      annees <- c(c("Toute la periode"="all"), stats::setNames(ann_vals, ann_vals))
+      updateSelectInput(session, "comp_annee", choices=annees, selected="all")
+      d <- dept_data()
+      depts <- sort(unique(d$departement))
+      depts <- depts[!is.na(depts)]
+      updateSelectInput(session, "comp_dept_a", choices=depts, selected=depts[1])
+      updateSelectInput(session, "comp_dept_b", choices=depts, selected=depts[2])
+    })
+
+
+
+    output$comp_radar <- renderPlotly({
+      req(input$comp_dept_a, input$comp_dept_b)
+      d <- dept_data()
+      .row <- function(dept) {
+        r <- d[d$departement == dept, ]
+        if (nrow(r) == 0) return(NULL)
+        list(dept=dept, taux_mortalite=round(r$taux_mortalite[1],2),
+             indice=round(r$indice_surmortalite[1],1),
+             nb_accidents=r$nb_accidents[1], nb_mortels=r$nb_mortels[1],
+             nb_tues=r$nb_tues[1])
+      }
+      ra <- .row(input$comp_dept_a)
+      rb <- .row(input$comp_dept_b)
+      req(!is.null(ra), !is.null(rb))
+      max_acc  <- max(d$nb_accidents,        na.rm=TRUE)
+      max_mort <- max(d$nb_mortels,          na.rm=TRUE)
+      max_taux <- max(d$taux_mortalite,      na.rm=TRUE)
+      max_tues <- max(d$nb_tues,             na.rm=TRUE)
+      max_ind  <- max(d$indice_surmortalite, na.rm=TRUE)
+      cats <- c("Taux mortalite","Indice surmortalite","Nb accidents",
+                "Nb deces","Tues (30j)","Taux mortalite")
+      norm_a <- c(ra$taux_mortalite/max_taux*100, ra$indice/max_ind*100,
+                  ra$nb_accidents/max_acc*100, ra$nb_mortels/max_mort*100,
+                  ra$nb_tues/max_tues*100, ra$taux_mortalite/max_taux*100)
+      norm_b <- c(rb$taux_mortalite/max_taux*100, rb$indice/max_ind*100,
+                  rb$nb_accidents/max_acc*100, rb$nb_mortels/max_mort*100,
+                  rb$nb_tues/max_tues*100, rb$taux_mortalite/max_taux*100)
+      plot_ly(type="scatterpolar", fill="toself") |>
+        add_trace(r=norm_a, theta=cats, name=ra$dept, mode="lines",
+                  line=list(color="#1b3a6b"), fillcolor="rgba(27,58,107,0.2)") |>
+        add_trace(r=norm_b, theta=cats, name=rb$dept, mode="lines",
+                  line=list(color="#dc3545"), fillcolor="rgba(220,53,69,0.15)") |>
+        layout(
+          polar  = list(radialaxis=list(visible=TRUE, range=c(0,100))),
+          legend = list(orientation="h", x=0.3, y=-0.1),
+          margin = list(t=20, b=40)
+        )
+    })
+
+    output$comp_summary <- renderUI({
+      req(input$comp_dept_a, input$comp_dept_b)
+      d <- dept_data()
+      ra <- d[d$departement == input$comp_dept_a, ]
+      rb <- d[d$departement == input$comp_dept_b, ]
+      req(nrow(ra) > 0, nrow(rb) > 0)
+      .badge <- function(val, ref) {
+        diff <- val - ref
+        col  <- if (diff > 0) "#dc3545" else "#28a745"
+        span(style=paste0("color:",col,";font-weight:600;"),
+             sprintf("%+.1f%%", diff))
+      }
+      div(style="display:grid;grid-template-columns:1fr 1fr;gap:12px;",
+        div(style="background:#f8f9fa;border-radius:8px;padding:12px;",
+          tags$h6(style="color:#1b3a6b;font-weight:700;", input$comp_dept_a),
+          p(strong("Taux mortalite : "), sprintf("%.2f%%", ra$taux_mortalite[1])),
+          p(strong("Indice surmortalite : "), sprintf("%.0f", ra$indice_surmortalite[1]), " (France=100)"),
+          p(strong("Nb accidents : "), format(ra$nb_accidents[1], big.mark=" ")),
+          p(strong("Deces : "), ra$nb_mortels[1])
+        ),
+        div(style="background:#f8f9fa;border-radius:8px;padding:12px;",
+          tags$h6(style="color:#dc3545;font-weight:700;", input$comp_dept_b),
+          p(strong("Taux mortalite : "), sprintf("%.2f%%", rb$taux_mortalite[1]),
+            .badge(rb$taux_mortalite[1], ra$taux_mortalite[1])),
+          p(strong("Indice surmortalite : "), sprintf("%.0f", rb$indice_surmortalite[1]), " (France=100)"),
+          p(strong("Nb accidents : "), format(rb$nb_accidents[1], big.mark=" ")),
+          p(strong("Deces : "), rb$nb_mortels[1])
+        )
+      )
+    })
   })
 }
