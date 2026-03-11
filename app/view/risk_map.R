@@ -12,7 +12,7 @@ box::use(
           highlightOptions, labelOptions],
   leaflet.extras[addFullscreenControl],
   plotly[plotlyOutput, renderPlotly, plot_ly, layout, add_trace],
-  DT[DTOutput, renderDT, datatable, formatStyle, styleInterval],
+  DT[DTOutput, renderDT, datatable, formatStyle, styleInterval, styleEqual],
   dplyr[filter, mutate, arrange, desc, slice_head, case_when,
         group_by, summarise, first, left_join, select, rename, pull, n,
         distinct],
@@ -250,33 +250,31 @@ server_risk_map <- function(id, app_data) {
     dept_data <- reactive({
       ann <- input$annee_global
       d <- if (is.null(ann) || ann == "all") {
-        app_data$accidents_dashboard
+        app_data$agg_dept_annee |>
+          dplyr::group_by(dep_clean) |>
+          dplyr::summarise(
+            departement    = dplyr::first(departement),
+            region         = dplyr::first(region),
+            nb_accidents   = sum(nb_accidents),
+            nb_mortels     = sum(nb_mortels),
+            nb_graves      = sum(nb_graves),
+            nb_tues        = sum(nb_tues),
+            taux_mortalite = round(sum(nb_mortels) / sum(nb_accidents) * 100, 2),
+            .groups        = "drop"
+          )
       } else {
-        app_data$accidents_dashboard |>
+        app_data$agg_dept_annee |>
           dplyr::filter(as.character(annee) == ann)
       }
-      d |>
-        dplyr::mutate(dep_clean = as.character(dep)) |>
-        dplyr::group_by(dep_clean) |>
-        dplyr::summarise(
-          departement    = dplyr::first(as.character(departement)),
-          region         = dplyr::first(as.character(region)),
-          nb_accidents   = dplyr::n(),
-          nb_mortels     = sum(gravite_accident == "Mortel", na.rm=TRUE),
-          nb_graves      = sum(gravite_accident == "Grave",  na.rm=TRUE),
-          nb_tues        = sum(nb_tues, na.rm=TRUE),
-          taux_mortalite = round(sum(gravite_accident == "Mortel", na.rm=TRUE) / dplyr::n() * 100, 2),
-          .groups        = "drop"
-        ) |>
-        dplyr::mutate(
-          classe_gravite = dplyr::case_when(
-            taux_mortalite >= 10 ~ "Très élevée",
-            taux_mortalite >=  5 ~ "Élevée",
-            taux_mortalite >=  2 ~ "Moyenne",
-            TRUE                 ~ "Faible"
-          ),
-          indice_surmortalite = round(taux_mortalite / 5.66 * 100, 1)
-        )
+      d |> dplyr::mutate(
+        classe_gravite = dplyr::case_when(
+          taux_mortalite >= 10 ~ "Très élevée",
+          taux_mortalite >=  5 ~ "Élevée",
+          taux_mortalite >=  2 ~ "Moyenne",
+          TRUE                 ~ "Faible"
+        ),
+        indice_surmortalite = round(taux_mortalite / 5.66 * 100, 1)
+      )
     })
 
     # Peupler le sélecteur région
@@ -460,8 +458,10 @@ server_risk_map <- function(id, app_data) {
 
     # Top 5
     output$top5 <- renderUI({
+      dom_tom <- c("971","972","973","974","975","976","977","978","986","987","988")
       d <- dept_data() |>
-        filter(!is.na(taux_mortalite)) |>
+        filter(!is.na(taux_mortalite), nb_accidents >= 100,
+               !dep_clean %in% dom_tom) |>
         arrange(desc(taux_mortalite)) |>
         slice_head(n = 5)
       couleurs <- c("#dc3545", "#e74c3c", "#f39c12", "#ffc107", "#ffd43b")
@@ -533,16 +533,28 @@ server_risk_map <- function(id, app_data) {
         filter(dep_clean %in% c("971","972","973","974","975",
                                  "976","977","978","986","987","988")) |>
         arrange(desc(taux_mortalite)) |>
-        select(departement, region, nb_accidents, nb_mortels, taux_mortalite) |>
+        dplyr::mutate(
+          fiabilite = dplyr::case_when(
+            nb_accidents <  30 ~ "⚠️ Très faible effectif",
+            nb_accidents < 100 ~ "⚠️ Faible effectif",
+            TRUE               ~ "✅ Représentatif"
+          )
+        ) |>
+        select(departement, region, nb_accidents, nb_mortels, taux_mortalite, fiabilite) |>
         rename(Territoire = departement, Zone = region,
                Accidents = nb_accidents, Deces = nb_mortels,
-               `Taux mort.` = taux_mortalite)
+               `Taux mort.` = taux_mortalite, Fiabilite = fiabilite)
       datatable(d, rownames = FALSE,
         options = list(pageLength = 15, dom = "t"),
         class = "table table-hover table-sm") |>
         formatStyle("Taux mort.",
           background = styleInterval(c(5, 8, 12),
-            c("#d4edda", "#fff3cd", "#ffd6a5", "#f8d7da")))
+            c("#d4edda", "#fff3cd", "#ffd6a5", "#f8d7da"))) |>
+        formatStyle("Fiabilite",
+          color = styleEqual(
+            c("⚠️ Très faible effectif", "⚠️ Faible effectif", "✅ Représentatif"),
+            c("#dc3545", "#fd7e14", "#28a745")
+          ))
     })
 
 

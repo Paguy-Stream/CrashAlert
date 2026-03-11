@@ -18,6 +18,7 @@ load_data <- function(path = "data_propre") {
     dept_filters = readRDS(file.path(path, "dept_filters.rds")),
     agg_evolution   = readRDS(file.path(path, "agg_evolution.rds")),
     agg_departement = readRDS(file.path(path, "agg_departement.rds")),
+    agg_dept_annee  = readRDS(file.path(path, "agg_dept_annee.rds")),
     agg_vehicules   = readRDS(file.path(path, "agg_vehicules.rds")),
     agg_age         = readRDS(file.path(path, "agg_age.rds")),
     agg_heatmap        = readRDS(file.path(path, "agg_heatmap.rds")),
