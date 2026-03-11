@@ -13,7 +13,7 @@ box::use(
 )
 
 .app_data    <- load_data("data_propre")
-.app_filters <- prepare_filters(.app_data$accidents, .app_data$dept_filters)
+.app_filters <- prepare_filters(.app_data$accidents_dashboard, .app_data$dept_filters)
 
 #' @export
 ui <- function(id) {

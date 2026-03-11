@@ -257,7 +257,7 @@ ui_about <- function(id) {
 
             div(class = "about-info-box",
               "Les donn\u00e9es sont issues des fichiers BAAC annuels publi\u00e9s par l\u2019ONISR sur ",
-              tags$a(href="https://www.data.gouv.fr/fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2022/",
+              tags$a(href="https://www.data.gouv.fr/fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/",
                      target="_blank", "data.gouv.fr"),
               ". Chaque ligne repr\u00e9sente un accident corporel d\u00e9clar\u00e9 par les forces de l\u2019ordre.",
               tags$br(), tags$br(),
@@ -731,7 +731,7 @@ ui_about <- function(id) {
               "La base source officielle est t\u00e9l\u00e9chargeable directement depuis data.gouv.fr \u2014 ",
               "c\u2019est la r\u00e9f\u00e9rence pour tout usage officiel ou acad\u00e9mique.", tags$br(), tags$br(),
               tags$a(
-                href   = "https://www.data.gouv.fr/fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2022/",
+                href   = "https://www.data.gouv.fr/fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/",
                 target = "_blank",
                 class  = "btn-datagouv",
                 bs_icon("box-arrow-up-right"), " T\u00e9l\u00e9charger la base BAAC sur data.gouv.fr"

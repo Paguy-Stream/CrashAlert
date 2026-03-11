@@ -105,6 +105,10 @@ ui_dashboard <- function(id) {
         div(class="filter-section",
           div(class="filter-label", "Régions"),
           selectInput(ns("regions"), label=NULL, choices=NULL, multiple=TRUE, width="100%")
+        ),
+        div(class="filter-section",
+          div(class="filter-label", "Départements"),
+          selectInput(ns("deps"), label=NULL, choices=NULL, multiple=TRUE, width="100%")
         )
       ),
       div(class="filter-footer",
@@ -253,14 +257,36 @@ server_dashboard <- function(id, app_data, app_filters) {
         choices=as.character(app_filters$annees), selected=character(0))
       updateSelectInput(session, "regions",
         choices=app_filters$regions, selected=character(0))
+      deps <- sort(unique(as.character(app_data$accidents_dashboard$departement)))
+      deps <- deps[!is.na(deps)]
+      updateSelectInput(session, "deps", choices=deps, selected=character(0))
+    })
+
+    observe({
+      req(length(input$regions) > 0)
+      deps_f <- app_data$accidents_dashboard |>
+        dplyr::filter(as.character(region) %in% input$regions) |>
+        dplyr::pull(departement) |> as.character() |> unique() |> sort()
+      updateSelectInput(session, "deps", choices=deps_f, selected=character(0))
+    })
+
+    observe({
+      req(length(input$deps) > 0)
+      regs_f <- app_data$accidents_dashboard |>
+        dplyr::filter(as.character(departement) %in% input$deps) |>
+        dplyr::pull(region) |> as.character() |> unique() |> sort()
+      updateSelectInput(session, "regions", choices=regs_f, selected=input$regions)
     })
 
     filtered <- eventReactive(input$apply, {
       annees_sel  <- if (length(input$annees)==0)  NULL else as.numeric(input$annees)
       regions_sel <- if (length(input$regions)==0) NULL else input$regions
       gravite_sel <- if (length(input$gravite)==0) NULL else input$gravite
-      filter_accidents(app_data$accidents,
+      dept_sel <- if (length(input$deps)==0) NULL else input$deps
+      d <- filter_accidents(app_data$accidents_dashboard,
         annees=annees_sel, regions=regions_sel, gravites=gravite_sel)
+      if (!is.null(dept_sel)) d <- d |> dplyr::filter(as.character(departement) %in% dept_sel)
+      d
     }, ignoreNULL=FALSE)
 
     observeEvent(input$reset, {

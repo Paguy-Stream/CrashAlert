@@ -55,6 +55,11 @@ ui_profile <- function(id) {
                       multiple=TRUE, width="180px")
         ),
         div(
+          tags$label(class="pf-label", bs_icon("signpost-split"), " Département"),
+          selectInput(ns("deps"), label=NULL, choices=NULL,
+                      multiple=TRUE, width="180px")
+        ),
+        div(
           tags$label(class="pf-label", bs_icon("exclamation-triangle"), " Gravite"),
           selectInput(ns("gravite"), label=NULL,
                       choices=c("Mortel","Grave","Léger"),
@@ -158,28 +163,47 @@ server_profile <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
     observe({
-      annees  <- sort(unique(app_data$accidents$annee))
-      regions <- sort(unique(as.character(app_data$accidents$region)))
+      annees  <- sort(unique(app_data$accidents_light$annee))
+      regions <- sort(unique(as.character(app_data$accidents_light$region)))
       regions <- regions[!is.na(regions)]
-      updateSelectInput(session, "annees",
-        choices=as.character(annees), selected=character(0))
-      updateSelectInput(session, "regions",
-        choices=regions, selected=character(0))
+      deps    <- sort(unique(as.character(app_data$accidents_light$departement)))
+      deps    <- deps[!is.na(deps)]
+      updateSelectInput(session, "annees",   choices=as.character(annees), selected=character(0))
+      updateSelectInput(session, "regions",  choices=regions,              selected=character(0))
+      updateSelectInput(session, "deps",     choices=deps,                 selected=character(0))
+    })
+
+    observe({
+      req(length(input$regions) > 0)
+      deps_f <- app_data$accidents_light |>
+        dplyr::filter(as.character(region) %in% input$regions) |>
+        dplyr::pull(departement) |> as.character() |> unique() |> sort()
+      updateSelectInput(session, "deps", choices=deps_f, selected=character(0))
+    })
+
+    observe({
+      req(length(input$deps) > 0)
+      regs_f <- app_data$accidents_light |>
+        dplyr::filter(as.character(departement) %in% input$deps) |>
+        dplyr::pull(region) |> as.character() |> unique() |> sort()
+      updateSelectInput(session, "regions", choices=regs_f, selected=input$regions)
     })
 
     filtered <- reactive({
-      d <- app_data$accidents
+      d <- app_data$accidents_light
       if (length(input$annees)  > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions) > 0) d <- d |> filter(as.character(region) %in% input$regions)
+      if (length(input$deps)    > 0) d <- d |> filter(as.character(departement) %in% input$deps)
       if (length(input$gravite) > 0) d <- d |> filter(gravite_accident %in% input$gravite)
       d
     })
 
     # Sans filtre gravité — pour calculer les taux contextuels (mortalité/gravité réels)
     filtered_all <- reactive({
-      d <- app_data$accidents
+      d <- app_data$accidents_light
       if (length(input$annees)  > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions) > 0) d <- d |> filter(as.character(region) %in% input$regions)
+      if (length(input$deps)    > 0) d <- d |> filter(as.character(departement) %in% input$deps)
       d
     })
 

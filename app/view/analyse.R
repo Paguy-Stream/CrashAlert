@@ -509,12 +509,12 @@ server_analyse <- function(id, app_data) {
 
     # Calcul features (une seule fois)
     features <- reactive({
-      .run_clustering(.prepare_features(app_data$accidents))
+      .run_clustering(.prepare_features(app_data$accidents_light))
     })
 
     # Données temporelles pré-calculées (une seule fois)
     evol_data <- reactive({
-      app_data$accidents |>
+      app_data$accidents_light |>
         mutate(dep_raw = as.character(dep)) |>
         mutate(dep_clean = case_when(
           dep_raw == "201" ~ "2A", dep_raw == "202" ~ "2B",
@@ -536,7 +536,7 @@ server_analyse <- function(id, app_data) {
 
     # Tendance nationale
     evol_france <- reactive({
-      app_data$accidents |>
+      app_data$accidents_light |>
         filter(!as.character(dep) %in% .DOMTOM) |>
         group_by(annee) |>
         summarise(taux_mort = round(mean(gravite_accident=="Mortel")*100, 3),
@@ -996,7 +996,7 @@ server_analyse <- function(id, app_data) {
     output$data_summary <- renderUI({
       f <- features()
       tagList(bs_icon("database"), " ",
-              tags$strong(format(nrow(app_data$accidents), big.mark="\u00a0")),
+              tags$strong(format(nrow(app_data$accidents_light), big.mark="\u00a0")),
               " accidents | ",
               tags$strong(nrow(f)), " departements")
     })
@@ -1160,7 +1160,7 @@ server_analyse <- function(id, app_data) {
     # ── ACM ───────────────────────────────────────────────────────────────────
     acm_result <- reactive({
       set.seed(123)
-      d <- app_data$accidents |>
+      d <- app_data$accidents_light |>
         filter(!is.na(tranche_age), !is.na(sexe_dominant),
                !is.na(categorie_vehicule), !is.na(atm_label),
                !is.na(lum_label), !is.na(catr_label),
@@ -1291,7 +1291,7 @@ server_analyse <- function(id, app_data) {
 
     # Peupler le sélecteur région
     observe({
-      regions <- app_data$accidents |>
+      regions <- app_data$accidents_light |>
         filter(!is.na(region)) |>
         distinct(region) |>
         arrange(region) |>
@@ -1329,7 +1329,7 @@ server_analyse <- function(id, app_data) {
           output_file   = out_file,
           params        = list(
             region    = region_sel,
-            accidents = app_data$accidents
+            accidents = app_data$accidents_light
           ),
           envir         = new.env(parent = globalenv()),
           quiet         = TRUE
@@ -1454,7 +1454,7 @@ server_analyse <- function(id, app_data) {
         tags$p(style="margin:10px 0 0;font-size:12px;color:#7f8c8d;",
           bs_icon("info-circle"),
           " Ces chiffres sont calculés directement depuis les ",
-          format(nrow(app_data$accidents), big.mark="\u00a0"),
+          format(nrow(app_data$accidents_light), big.mark="\u00a0"),
           " accidents de la base BAAC 2015-2024. Ils se mettent à jour",
           " automatiquement si la base de données est actualisée."
         )

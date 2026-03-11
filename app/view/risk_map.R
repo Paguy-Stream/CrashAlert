@@ -210,7 +210,7 @@ server_risk_map <- function(id, app_data) {
 
     # Peupler le sélecteur région
     observe({
-      regions <- app_data$accidents |>
+      regions <- app_data$accidents_dashboard |>
         filter(!is.na(region)) |>
         distinct(region) |>
         arrange(region) |>
@@ -225,7 +225,7 @@ server_risk_map <- function(id, app_data) {
     .gen_rapport <- function(format_out) {
       req(input$region_rapport, input$region_rapport != "")
       region_sel <- input$region_rapport
-      acc_region <- app_data$accidents |>
+      acc_region <- app_data$accidents_dashboard |>
         filter(as.character(region) == region_sel)
       req(nrow(acc_region) > 0)
 
@@ -251,7 +251,7 @@ server_risk_map <- function(id, app_data) {
           output_file   = out_file,
           params        = list(
             region    = region_sel,
-            accidents = app_data$accidents
+            accidents = app_data$accidents_dashboard
           ),
           envir         = new.env(parent = globalenv()),
           quiet         = TRUE

@@ -11,7 +11,8 @@ box::use(
 )
 
 # Helper : calcule taux mortalite + volume par variable
-.taux_var <- function(d, col, min_n = 200) {
+.taux_var <- function(d, col, min_n = NULL) {
+  if (is.null(min_n)) min_n <- max(5, round(nrow(d) * 0.03))
   d |>
     filter(!is.na(.data[[col]]),
            as.character(.data[[col]]) != "Non renseign\u00e9") |>
@@ -71,6 +72,9 @@ ui_facteurs <- function(id) {
                         multiple=TRUE, width="160px")),
         div(tags$label(class="fac-label", bs_icon("geo-alt"), " Region"),
             selectInput(ns("regions"), label=NULL, choices=NULL,
+                        multiple=TRUE, width="180px")),
+        div(tags$label(class="fac-label", bs_icon("signpost-split"), " Département"),
+            selectInput(ns("deps"), label=NULL, choices=NULL,
                         multiple=TRUE, width="180px")),
         div(tags$label(class="fac-label", bs_icon("signpost-split"), " Type route"),
             selectInput(ns("type_route"), label=NULL, choices=NULL,
@@ -173,21 +177,41 @@ server_facteurs <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
     observe({
-      annees  <- sort(unique(app_data$accidents$annee))
-      regions <- sort(unique(as.character(app_data$accidents$region)))
+      annees  <- sort(unique(app_data$accidents_light$annee))
+      regions <- sort(unique(as.character(app_data$accidents_light$region)))
       regions <- regions[!is.na(regions)]
-      routes  <- sort(unique(as.character(app_data$accidents$catr_label)))
-      routes  <- routes[!routes %in% c("Non renseign\u00e9","")]
+      routes  <- sort(unique(as.character(app_data$accidents_light$catr_label)))
+      routes  <- routes[!routes %in% c("Non renseigné","")]
+      deps    <- sort(unique(as.character(app_data$accidents_light$departement)))
+      deps    <- deps[!is.na(deps)]
       updateSelectInput(session, "annees",     choices=as.character(annees), selected=character(0))
       updateSelectInput(session, "regions",    choices=regions,              selected=character(0))
       updateSelectInput(session, "type_route", choices=routes,               selected=character(0))
+      updateSelectInput(session, "deps",       choices=deps,                 selected=character(0))
+    })
+
+    observe({
+      req(length(input$regions) > 0)
+      deps_f <- app_data$accidents_light |>
+        dplyr::filter(as.character(region) %in% input$regions) |>
+        dplyr::pull(departement) |> as.character() |> unique() |> sort()
+      updateSelectInput(session, "deps", choices=deps_f, selected=character(0))
+    })
+
+    observe({
+      req(length(input$deps) > 0)
+      regs_f <- app_data$accidents_light |>
+        dplyr::filter(as.character(departement) %in% input$deps) |>
+        dplyr::pull(region) |> as.character() |> unique() |> sort()
+      updateSelectInput(session, "regions", choices=regs_f, selected=input$regions)
     })
 
     filtered <- reactive({
-      d <- app_data$accidents
+      d <- app_data$accidents_light
       if (length(input$annees)     > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions)    > 0) d <- d |> filter(as.character(region) %in% input$regions)
       if (length(input$type_route) > 0) d <- d |> filter(as.character(catr_label) %in% input$type_route)
+      if (length(input$deps)       > 0) d <- d |> filter(as.character(departement) %in% input$deps)
       d
     })
 
