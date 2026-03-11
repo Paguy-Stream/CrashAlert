@@ -1,0 +1,12 @@
+# Application dependencies
+library(shiny)
+library(bslib)
+library(dplyr)
+library(leaflet)
+library(leaflet.extras)
+library(plotly)
+library(DT)
+library(echarts4r)
+library(shinyWidgets)
+library(lubridate)
+library(stringr)
