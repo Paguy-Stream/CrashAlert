@@ -33,7 +33,6 @@ ui_dashboard <- function(id) {
 
   tagList(
     tags$style(HTML("
-      .ca-topbar {
         display: flex; align-items: center; justify-content: space-between;
         padding: 10px 20px; background: #fff;
         border-bottom: 1px solid #e9ecef;
@@ -80,6 +79,7 @@ ui_dashboard <- function(id) {
         content: ''; flex: 1; height: 1px; background: #e9ecef;
       }
     ")),
+    tags$script(HTML("function toggleInterp(boxId,btn){var el=document.getElementById(boxId);if(!el.style.display||el.style.display==='none'){el.style.display='block';btn.innerHTML='&#x25B2; Fermer';}else{el.style.display='none';btn.innerHTML='&#x1F4A1; Interpr\u00e9ter';}}")),
 
     # ── Offcanvas ────────────────────────────────────────────────────────────
     div(class = "offcanvas offcanvas-start", tabindex = "-1",
@@ -210,11 +210,29 @@ ui_dashboard <- function(id) {
         col_widths=c(7,5),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("graph-up"), " Évolution annuelle")),
-          card_body(plotlyOutput(ns("evolution"), height="280px"))
+          card_body(plotlyOutput(ns("evolution"), height="280px")),
+          card_footer(style="padding:4px 12px;background:transparent;border-top:1px solid #f0f0f0;",
+            tags$button(class="interp-btn",
+              onclick=paste0("toggleInterp('", ns("interp_evolution_box"), "', this)"),
+              bs_icon("lightbulb"), " Interpréter"
+            ),
+            div(id=ns("interp_evolution_box"), style="display:none;",
+              uiOutput(ns("interp_evolution"))
+            )
+          )
         ),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("car-front-fill"), " Véhicules impliqués")),
-          card_body(plotlyOutput(ns("vehicules"), height="280px"))
+          card_body(plotlyOutput(ns("vehicules"), height="280px")),
+          card_footer(style="padding:4px 12px;background:transparent;border-top:1px solid #f0f0f0;",
+            tags$button(class="interp-btn",
+              onclick=paste0("toggleInterp('", ns("interp_vehicules_box"), "', this)"),
+              bs_icon("lightbulb"), " Interpréter"
+            ),
+            div(id=ns("interp_vehicules_box"), style="display:none;",
+              uiOutput(ns("interp_vehicules"))
+            )
+          )
         )
       ),
 
@@ -224,15 +242,42 @@ ui_dashboard <- function(id) {
         col_widths=c(4,4,4),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("sign-intersection"), " Type de collision")),
-          card_body(plotlyOutput(ns("collision"), height="250px"))
+          card_body(plotlyOutput(ns("collision"), height="250px")),
+          card_footer(style="padding:4px 12px;background:transparent;border-top:1px solid #f0f0f0;",
+            tags$button(class="interp-btn",
+              onclick=paste0("toggleInterp('", ns("interp_collision_box"), "', this)"),
+              bs_icon("lightbulb"), " Interpréter"
+            ),
+            div(id=ns("interp_collision_box"), style="display:none;",
+              uiOutput(ns("interp_collision"))
+            )
+          )
         ),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("cloud-drizzle"), " Conditions météo")),
-          card_body(plotlyOutput(ns("meteo"), height="250px"))
+          card_body(plotlyOutput(ns("meteo"), height="250px")),
+          card_footer(style="padding:4px 12px;background:transparent;border-top:1px solid #f0f0f0;",
+            tags$button(class="interp-btn",
+              onclick=paste0("toggleInterp('", ns("interp_meteo_box"), "', this)"),
+              bs_icon("lightbulb"), " Interpréter"
+            ),
+            div(id=ns("interp_meteo_box"), style="display:none;",
+              uiOutput(ns("interp_meteo"))
+            )
+          )
         ),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("signpost-split"), " Type de route")),
-          card_body(plotlyOutput(ns("route"), height="250px"))
+          card_body(plotlyOutput(ns("route"), height="250px")),
+          card_footer(style="padding:4px 12px;background:transparent;border-top:1px solid #f0f0f0;",
+            tags$button(class="interp-btn",
+              onclick=paste0("toggleInterp('", ns("interp_route_box"), "', this)"),
+              bs_icon("lightbulb"), " Interpréter"
+            ),
+            div(id=ns("interp_route_box"), style="display:none;",
+              uiOutput(ns("interp_route"))
+            )
+          )
         )
       ),
 
@@ -272,10 +317,13 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     observe({
       req(length(input$deps) > 0)
-      regs_f <- app_data$accidents_dashboard |>
+      # Garder toutes les régions disponibles, juste mettre à jour la sélection
+      all_regs <- sort(unique(as.character(app_data$accidents_dashboard$region)))
+      all_regs <- all_regs[!is.na(all_regs)]
+      regs_sel <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(departement) %in% input$deps) |>
         dplyr::pull(region) |> as.character() |> unique() |> sort()
-      updateSelectInput(session, "regions", choices=regs_f, selected=input$regions)
+      updateSelectInput(session, "regions", choices=all_regs, selected=regs_sel)
     })
 
     filtered <- eventReactive(input$apply, {
@@ -403,7 +451,8 @@ server_dashboard <- function(id, app_data, app_filters) {
         marker=list(colors=unname(couleurs_pie[as.character(d$gravite_accident)])),
         textinfo="label+percent") |>
         layout(showlegend=TRUE, margin=list(t=10,b=10),
-               paper_bgcolor="transparent", plot_bgcolor="transparent")
+               paper_bgcolor="transparent", plot_bgcolor="transparent") |>
+        plotly::config(displayModeBar=FALSE)
     })
 
     # Évolution
@@ -426,7 +475,8 @@ server_dashboard <- function(id, app_data, app_filters) {
                yaxis=list(title="Nombre",gridcolor="#f0f0f0"),
                legend=list(orientation="h",y=-0.3),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=5,b=5))
+               margin=list(t=5,b=5)) |>
+        plotly::config(displayModeBar=FALSE)
     })
 
     # Véhicules
@@ -448,7 +498,8 @@ server_dashboard <- function(id, app_data, app_filters) {
         layout(xaxis=list(title="", tickangle=-30),
                yaxis=list(title="Nb accidents"),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=10,b=80))
+               margin=list(t=10,b=80)) |>
+        plotly::config(displayModeBar=FALSE)
     })
 
     # Collision
@@ -464,15 +515,26 @@ server_dashboard <- function(id, app_data, app_filters) {
         textinfo="percent", hoverinfo="label+value+percent") |>
         layout(showlegend=TRUE, legend=list(font=list(size=10)),
                margin=list(t=5,b=5,l=5,r=5),
-               paper_bgcolor="transparent", plot_bgcolor="transparent")
+               paper_bgcolor="transparent", plot_bgcolor="transparent") |>
+        plotly::config(displayModeBar=FALSE)
     })
 
     # Météo
     output$meteo <- renderPlotly({
-      d <- app_data$agg_meteo |>
-        arrange(taux_mortalite) |> slice_head(n=6)
+      d <- filtered() |>
+        dplyr::filter(!is.na(atm_label), atm_label != "") |>
+        dplyr::mutate(atm_label=as.character(atm_label)) |>
+        dplyr::group_by(atm_label) |>
+        dplyr::summarise(n=dplyr::n(),
+                         mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
+                         .groups="drop") |>
+        dplyr::filter(n >= 30) |>
+        dplyr::mutate(taux_mortalite=round(mortels/n*100,1)) |>
+        dplyr::arrange(dplyr::desc(taux_mortalite)) |> dplyr::slice_head(n=6) |>
+        dplyr::arrange(taux_mortalite) |>
+        dplyr::rename(conditions_meteo=atm_label)
       plot_ly(d, x=~taux_mortalite,
-              y=~conditions_meteo,
+              y=~factor(conditions_meteo, levels=conditions_meteo),
               type="bar", orientation="h",
               marker=list(color=~taux_mortalite,
                           colorscale=list(c(0,"#fff3cd"),c(1,"#dc3545")),
@@ -480,9 +542,11 @@ server_dashboard <- function(id, app_data, app_filters) {
               text=~paste0(round(taux_mortalite,1),"%"),
               textposition="outside") |>
         layout(xaxis=list(title="Taux mortalité (%)"),
-               yaxis=list(title=""),
+               yaxis=list(title="", categoryorder="array",
+                          categoryarray=~conditions_meteo),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=5,r=60))
+               margin=list(t=5,r=60)) |>
+        plotly::config(displayModeBar=FALSE)
     })
 
     # Route
@@ -506,7 +570,8 @@ server_dashboard <- function(id, app_data, app_filters) {
                yaxis=list(title="Nb accidents"),
                legend=list(orientation="h",y=-0.4),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=5,b=90))
+               margin=list(t=5,b=90)) |>
+        plotly::config(displayModeBar=FALSE)
     })
 
     # Top 15 départements
@@ -555,6 +620,137 @@ server_dashboard <- function(id, app_data, app_filters) {
         utils::write.csv(filtered(), file, row.names = FALSE, fileEncoding = "UTF-8")
       }
     )
+
+
+    # ── Interprétations dynamiques ─────────────────────────────────────────
+
+    output$interp_evolution <- renderUI({
+      d <- filtered() |>
+        dplyr::group_by(annee) |>
+        dplyr::summarise(Accidents=dplyr::n(), .groups="drop")
+      req(nrow(d) > 0)
+      an_max <- d$annee[which.max(d$Accidents)]
+      an_min <- d$annee[which.min(d$Accidents)]
+      n_max  <- format(max(d$Accidents), big.mark=" ")
+      n_min  <- format(min(d$Accidents), big.mark=" ")
+      note_covid <- if (2020 %in% d$annee) " La baisse de 2020 est liée aux confinements COVID-19." else ""
+      div(class="interp-box",
+        tags$b("📊 Ce que montre ce graphique :"), tags$br(),
+        tags$p(sprintf(
+          "Sur la sélection actuelle, l’année la plus accidentogène est %d (%s accidents) et la moins accidentogène est %d (%s).%s",
+          an_max, n_max, an_min, n_min, note_covid
+        ))
+      )
+    })
+
+    output$interp_vehicules <- renderUI({
+      d <- filtered() |>
+        dplyr::filter(!is.na(categorie_vehicule),
+                      as.character(categorie_vehicule) != "Non renseigné") |>
+        dplyr::mutate(categorie_vehicule=as.character(categorie_vehicule)) |>
+        dplyr::group_by(categorie_vehicule) |>
+        dplyr::summarise(n=dplyr::n(),
+                         mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
+                         .groups="drop") |>
+        dplyr::mutate(taux=round(mortels/n*100,1)) |>
+        dplyr::arrange(dplyr::desc(n))
+      req(nrow(d) > 0)
+      top1     <- d[1,]
+      top2     <- d[2,]
+      danger   <- d |> dplyr::filter(taux > 10) |> dplyr::arrange(dplyr::desc(taux))
+      pct_top1 <- round(top1$n / sum(d$n) * 100, 1)
+      danger_txt <- if (nrow(danger) >= 2) {
+        paste0(nrow(danger), " catégories dépassent 10%% de mortalité : ",
+          paste(sprintf("%s (%.1f%%)", tolower(danger$categorie_vehicule), danger$taux),
+                collapse=", "), ".")
+      } else {
+        sprintf("Les %s présentent le taux le plus élevé (%.1f%%).",
+          tolower(d$categorie_vehicule[which.max(d$taux)]), max(d$taux))
+      }
+      div(class="interp-box",
+        tags$b("🚗 Ce que montre ce graphique :"), tags$br(),
+        tags$p(sprintf(
+          "Les %s sont les plus fréquemment impliqués (%.1f%% des accidents), suivis des %s. Fréquence ≠ dangerosité : %s Ces véhicules exposent davantage leurs usagers en raison de leur masse ou vulnérabilité.",
+          tolower(top1$categorie_vehicule), pct_top1,
+          tolower(top2$categorie_vehicule),
+          danger_txt
+        ))
+      )
+    })
+
+    output$interp_collision <- renderUI({
+      d <- filtered() |>
+        dplyr::filter(!is.na(col_label), col_label != "") |>
+        dplyr::count(col_label, sort=TRUE)
+      req(nrow(d) > 0)
+      total   <- sum(d$n)
+      top1    <- d[1,]
+      top2    <- d[2,]
+      frontal <- d[grepl("front", d$col_label, ignore.case=TRUE),]
+      pct_f   <- if(nrow(frontal)>0) round(frontal$n[1]/total*100,1) else 0
+      div(class="interp-box",
+        tags$b("💥 Ce que montre ce graphique :"), tags$br(),
+        tags$p(sprintf(
+          "La collision la plus fréquente est « %s » (%.1f%% des cas), suivie de « %s » (%.1f%%). Ces deux types représentent plus de la moitié des accidents. Les collisions frontales restent minoritaires (%.1f%%) mais sont parmi les plus meurtrières : la somme des vitesses décuple l’énergie cinétique absorbée lors du choc.",
+          top1$col_label, round(top1$n/total*100,1),
+          top2$col_label, round(top2$n/total*100,1),
+          pct_f
+        ))
+      )
+    })
+
+    output$interp_meteo <- renderUI({
+      d <- filtered() |>
+        dplyr::filter(!is.na(atm_label), atm_label != "") |>
+        dplyr::mutate(atm_label=as.character(atm_label)) |>
+        dplyr::group_by(atm_label) |>
+        dplyr::summarise(n=dplyr::n(),
+                         mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
+                         .groups="drop") |>
+        dplyr::filter(n >= 30) |>
+        dplyr::mutate(taux=round(mortels/n*100,1)) |>
+        dplyr::arrange(dplyr::desc(taux))
+      req(nrow(d) >= 2)
+      top1 <- d[1,]
+      top2 <- d[2,]
+      bot  <- d[nrow(d),]
+      norm <- d[d$atm_label == "Normale",]
+      taux_norm <- if(nrow(norm)>0) norm$taux[1] else 5.5
+      div(class="interp-box",
+        tags$b("🌧 Ce que montre ce graphique :"), tags$br(),
+        tags$p(sprintf(
+          "Sur la sélection, %s présente le taux de mortalité le plus élevé (%.1f%%), soit %.1fx le risque par temps normal (%.1f%%). %s suit avec %.1f%%. Même %s, le moins dangereux affiché (%.1f%%), dépasse la moyenne générale.",
+          top1$atm_label, top1$taux,
+          round(top1$taux/taux_norm,1), taux_norm,
+          top2$atm_label, top2$taux,
+          bot$atm_label, bot$taux
+        ))
+      )
+    })
+
+    output$interp_route <- renderUI({
+      d <- filtered() |>
+        dplyr::filter(!is.na(type_route)) |>
+        dplyr::mutate(type_route=as.character(type_route)) |>
+        dplyr::group_by(type_route) |>
+        dplyr::summarise(n=dplyr::n(),
+                         mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
+                         .groups="drop") |>
+        dplyr::mutate(taux=round(mortels/n*100,1)) |>
+        dplyr::arrange(dplyr::desc(n))
+      req(nrow(d) > 0)
+      top_vol  <- d[1,]
+      top_taux <- d[which.max(d$taux),]
+      pct_top  <- round(top_vol$n/sum(d$n)*100,1)
+      div(class="interp-box",
+        tags$b("🛣 Ce que montre ce graphique :"), tags$br(),
+        tags$p(sprintf(
+          "Ce graphique montre le volume d’accidents (bleu) et les décès (rouge) par type de route. Les %s concentrent le plus d’accidents (%.1f%% du total) mais ne sont pas forcément les plus dangereux. C’est sur les %s que le taux de mortalité est le plus élevé (%.1f%% des accidents y sont mortels), en raison des vitesses pratiquées et de l’éloignement des secours.",
+          tolower(top_vol$type_route), pct_top,
+          tolower(top_taux$type_route), top_taux$taux
+        ))
+      )
+    })
 
   })
 }
