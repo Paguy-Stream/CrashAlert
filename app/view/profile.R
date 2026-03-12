@@ -393,7 +393,7 @@ server_profile <- function(id, app_data) {
                   yaxis=list(title="% accidents",range=c(0,100)),
                   legend=list(orientation="h",y=-0.2),
                   paper_bgcolor="transparent", plot_bgcolor="transparent",
-                  margin=list(t=5))
+                  margin=list(t=5)) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$age_bar <- renderPlotly({
@@ -429,7 +429,7 @@ server_profile <- function(id, app_data) {
                   yaxis=list(title="Nb accidents"),
                   legend=list(orientation="h",y=-0.35),
                   paper_bgcolor="transparent", plot_bgcolor="transparent",
-                  margin=list(t=5,b=80))
+                  margin=list(t=5,b=80)) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$age_mortalite <- renderPlotly({
@@ -478,7 +478,7 @@ server_profile <- function(id, app_data) {
           yaxis=list(title="Taux mortalite (%)"),
           legend=list(orientation="h", y=-0.25),
           paper_bgcolor="transparent", plot_bgcolor="transparent",
-          margin=list(t=5, b=80))
+          margin=list(t=5, b=80)) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$catu_pie <- renderPlotly({
@@ -495,7 +495,7 @@ server_profile <- function(id, app_data) {
       p_catu <- plotly::event_register(p_catu, "plotly_click")
       p_catu |>
         layout(showlegend=TRUE, paper_bgcolor="transparent",
-               plot_bgcolor="transparent", margin=list(t=5,b=5))
+               plot_bgcolor="transparent", margin=list(t=5,b=5)) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$vehicule_gravite <- renderPlotly({
@@ -535,7 +535,7 @@ server_profile <- function(id, app_data) {
                   yaxis=list(title=""),
                   legend=list(orientation="h",y=-0.15),
                   paper_bgcolor="transparent", plot_bgcolor="transparent",
-                  margin=list(t=5,l=160))
+                  margin=list(t=5,l=160)) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$secu <- renderPlotly({
@@ -567,7 +567,7 @@ server_profile <- function(id, app_data) {
       p_secu |> layout(xaxis=list(title="Nb accidents"),
                yaxis=list(title=""),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=5,r=80,l=160))
+               margin=list(t=5,r=80,l=160)) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$insights_box <- renderUI({
@@ -627,35 +627,35 @@ server_profile <- function(id, app_data) {
     # ── Side Panel — clic plotly ───────────────────────────────────────────
     panel_trigger <- shiny::reactiveVal(NULL)
 
-    observeEvent(plotly::event_data("plotly_click", source="age_bar"), {
+    observeEvent(plotly::event_data("plotly_click", source="age_bar"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="age_bar")
       req(!is.null(ev))
       panel_trigger(list(source="age_bar", key=as.character(ev$x[1])))
       session$sendCustomMessage("openPanel", list(id="profile-side-panel"))
     })
 
-    observeEvent(plotly::event_data("plotly_click", source="vehicule_gravite"), {
+    observeEvent(plotly::event_data("plotly_click", source="vehicule_gravite"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="vehicule_gravite")
       req(!is.null(ev))
       panel_trigger(list(source="vehicule_gravite", key=as.character(ev$y[1])))
       session$sendCustomMessage("openPanel", list(id="profile-side-panel"))
     })
 
-    observeEvent(plotly::event_data("plotly_click", source="secu"), {
+    observeEvent(plotly::event_data("plotly_click", source="secu"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="secu")
       req(!is.null(ev))
       panel_trigger(list(source="secu", key=as.character(ev$y[1])))
       session$sendCustomMessage("openPanel", list(id="profile-side-panel"))
     })
 
-    observeEvent(plotly::event_data("plotly_click", source="sexe_gravite"), {
+    observeEvent(plotly::event_data("plotly_click", source="sexe_gravite"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="sexe_gravite")
       req(!is.null(ev))
       panel_trigger(list(source="sexe_gravite", key=as.character(ev$x[1])))
       session$sendCustomMessage("openPanel", list(id="profile-side-panel"))
     })
 
-    observeEvent(plotly::event_data("plotly_click", source="catu_pie"), {
+    observeEvent(plotly::event_data("plotly_click", source="catu_pie"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="catu_pie")
       req(!is.null(ev))
       catu_levels <- app_data$accidents_light |> dplyr::filter(!is.na(catu_principal)) |> dplyr::count(catu_principal, sort=TRUE) |> dplyr::pull(catu_principal) |> as.character()
@@ -663,7 +663,7 @@ server_profile <- function(id, app_data) {
       session$sendCustomMessage("openPanel", list(id="profile-side-panel"))
     })
 
-    observeEvent(plotly::event_data("plotly_click", source="age_mortalite"), {
+    observeEvent(plotly::event_data("plotly_click", source="age_mortalite"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="age_mortalite")
       req(!is.null(ev))
       panel_trigger(list(source="age_mortalite", key=as.character(ev$x[1]), sexe=as.character(ev$curveNumber)))
