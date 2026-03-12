@@ -739,9 +739,19 @@ server_profile <- function(id, app_data) {
 
       } else if (trigger$source == "secu") {
         secu_sel <- trigger$key
+        codes_secu_map <- c(
+          "0"="Non renseigne","1"="Ceinture portee","2"="Casque porte",
+          "3"="Dispos. enfant","4"="Gilet refl.",
+          "8"="Non determine","9"="Autre",
+          "11"="Ceinture porte","12"="Ceinture non portee",
+          "13"="Casque porte","21"="Casque non porte",
+          "22"="Dispos. enfant porte","23"="Dispos. enfant non porte",
+          "91"="Gilet porte","92"="Gilet non porte","93"="Autre porte")
         d_secu <- d |>
-          dplyr::filter(!is.na(secu_principal),
-                        as.character(secu_principal) == secu_sel) |>
+          dplyr::filter(!is.na(secu_principal)) |>
+          dplyr::mutate(sc=as.character(secu_principal),
+            secu_label=ifelse(sc %in% names(codes_secu_map), codes_secu_map[sc], sc)) |>
+          dplyr::filter(secu_label == secu_sel) |>
           dplyr::summarise(
             n=dplyr::n(),
             mortels=sum(gravite_accident=="Mortel", na.rm=TRUE),
