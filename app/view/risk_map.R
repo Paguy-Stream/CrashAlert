@@ -143,6 +143,12 @@ ui_risk_map <- function(id) {
               selected = "",
               width = "220px"
             ),
+            selectInput(ns("annee_rapport"),
+              label = NULL,
+              choices = c("Toute la période" = "all"),
+              selected = "all",
+              width = "160px"
+            ),
             downloadButton(ns("dl_rapport_html"),
               label = " Rapport HTML",
               icon  = shiny::icon("file-code"),
@@ -285,6 +291,11 @@ server_risk_map <- function(id, app_data) {
         arrange(region) |>
         pull(region) |>
         as.character()
+      ann_vals2 <- as.character(sort(unique(app_data$accidents_dashboard$annee)))
+      annees2 <- c(c("Toute la periode"="all"), stats::setNames(ann_vals2, ann_vals2))
+      shiny::updateSelectInput(session, "annee_rapport", choices=annees2, selected="all")
+      ann_vals2 <- as.character(sort(unique(app_data$accidents_dashboard$annee)))
+      annees2 <- c(c("Toute la periode"="all"), stats::setNames(ann_vals2, ann_vals2))
       shiny::updateSelectInput(session, "region_rapport",
         choices  = c("— Choisir une région —" = "", regions),
         selected = "")
@@ -320,6 +331,7 @@ server_risk_map <- function(id, app_data) {
           output_file   = out_file,
           params        = list(
             region    = region_sel,
+            annee     = input$annee_rapport,
             accidents = app_data$accidents_dashboard
           ),
           envir         = new.env(parent = globalenv()),

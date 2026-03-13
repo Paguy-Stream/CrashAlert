@@ -22,6 +22,7 @@ output:
     extra_dependencies: ["booktabs", "longtable", "array", "float"]
 params:
   region: "Île-de-France"
+  annee: "all"
   accidents: NULL
 ---
 
@@ -35,6 +36,10 @@ BLEU_DARK <- "#1b3a6b"
 BLEU_MED  <- "#4a6fa5"
 
 acc <- params$accidents |> filter(as.character(region) == params$region)
+if (!is.null(params$annee) && params$annee != "all") {
+  acc <- acc |> filter(as.character(annee) == params$annee)
+}
+annee_label <- if(is.null(params$annee) || params$annee == "all") "2015–2024" else as.character(params$annee)
 
 depts <- acc |> mutate(dep_nom=as.character(departement)) |>
   distinct(dep_nom) |> arrange(dep_nom) |> pull(dep_nom)
@@ -60,13 +65,14 @@ stats_d <- acc |> mutate(dep_nom=as.character(departement)) |>
     taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,2),
     nuit=round(mean(grepl("Nuit",as.character(lum_label)),na.rm=TRUE)*100,1),
     age_m=round(mean(age_moyen_reel,na.rm=TRUE),1),
-    hom=round(mean(as.character(sexe_dominant)=="Homme",na.rm=TRUE)*100,1),
     .groups="drop") |> arrange(desc(taux))
 ```
 
+
+`r paste0("# ", params$region, " — ", annee_label)`
+
 ---
 
-# Synthèse régionale
 
 ## `r params$region` — Vue d'ensemble
 
@@ -172,14 +178,14 @@ if(nrow(hd)>0){
 
 ```{r table_dept}
 df_dept <- stats_d |> rename(Département=dep_nom,`Nb acc.`=nb,`Mortels`=mort,
-    `Graves`=grav,`Taux%`=taux,`%nuit`=nuit,`Âge`=age_m,`%H`=hom)
+    `Graves`=grav,`Taux%`=taux,`%nuit`=nuit,`Âge`=age_m)
 
 if (knitr::is_latex_output()) {
-  knitr::kable(df_dept, format="latex", booktabs=TRUE, align=c("l",rep("r",7))) |>
+  knitr::kable(df_dept, format="latex", booktabs=TRUE, align=c("l",rep("r",6))) |>
     kableExtra::kable_styling(latex_options=c("scale_down","HOLD_position"),
                               font_size=9)
 } else {
-  knitr::kable(df_dept, format="html", align=c("l",rep("r",7))) |>
+  knitr::kable(df_dept, format="html", align=c("l",rep("r",6))) |>
     kable_styling(bootstrap_options=c("striped","hover","condensed","responsive"),
                   full_width=TRUE,font_size=12) |>
     column_spec(5,color=ifelse(stats_d$taux>taux_fr,"#dc3545","#28a745"),bold=TRUE) |>
@@ -225,26 +231,30 @@ for(dept in depts){
   col_dd <- ifelse(tx_d>taux_fr,"#dc3545","#28a745")
 
   h_top  <- d |> filter(!is.na(heure)) |> count(heure,sort=TRUE) |> slice(1) |> pull(heure)
-  j_top  <- d |> filter(!is.na(jour_semaine)) |> count(jour_semaine,sort=TRUE) |> slice(1) |> pull(jour_semaine)
-  a_top  <- d |> filter(!is.na(tranche_age),
-    !as.character(tranche_age) %in% c("Non renseigné","Non renseigne","")) |>
-    count(tranche_age,sort=TRUE) |> slice(1) |> pull(tranche_age)
+  col_jour <- if("jour_semaine" %in% names(d)) "jour_semaine" else "jour"
+  j_top  <- d |> filter(!is.na(.data[[col_jour]])) |> count(.data[[col_jour]],sort=TRUE) |> slice(1) |> pull(1)
+  a_top  <- round(mean(d$age_moyen_reel, na.rm=TRUE), 1)
+
+
 
   cat("\n\n## ", dept, "\n\n", sep="")
 
   tbl <- data.frame(
-    A=paste0(format(nb_d,big.mark=" ")," accidents"),
-    B=paste0(format(mort_d,big.mark=" ")," mortels"),
-    C=paste0(tx_d,"% mortalité (",sgn_d,dlt_d,"% vs France)"),
-    D=paste0("Pic : ",h_top,"h | Jour : ",j_top," | Âge dom. : ",a_top))
+    Indicateur = c("Accidents","Mortels","Taux mortalité","Pic horaire / Jour / Âge moy."),
+    Valeur = c(
+      format(nb_d, big.mark=" "),
+      format(mort_d, big.mark=" "),
+      paste0(tx_d,"% (",sgn_d,dlt_d,"% vs France)"),
+      paste0(h_top,"h | Jour ",j_top," | ",a_top," ans")
+    ))
 
   if (knitr::is_latex_output()) {
     print(knitr::kable(tbl, format="latex", booktabs=TRUE, col.names=NULL) |>
       kableExtra::kable_styling(latex_options=c("HOLD_position"), font_size=9))
   } else {
-    print(knitr::kable(tbl,format="html",col.names=NULL) |>
-      kable_styling(bootstrap_options=c("condensed"),full_width=TRUE,font_size=12) |>
-      column_spec(3,color=col_dd,bold=TRUE))
+    cat(knitr::kable(tbl, format="html", col.names=NULL) |>
+      kable_styling(bootstrap_options=c("condensed"), full_width=FALSE, font_size=12) |>
+      column_spec(2, color=col_dd, bold=TRUE) |> as.character())
   }
   cat("\n\n")
 }
@@ -301,91 +311,32 @@ ggplot(rd,aes(x=reorder(route,taux),y=taux)) +
 # Profil des accidentés
 
 ## Tranche d'âge
-
 ```{r age_plot, fig.height=4}
-ord_age <- c("0-17 ans","18-24 ans","25-34 ans","35-44 ans",
-             "45-54 ans","55-64 ans","65-74 ans","75+ ans")
-
 ad <- acc |>
-  filter(!is.na(tranche_age),
-         !as.character(tranche_age) %in% c("Non renseigné","Non renseigne","")) |>
-  mutate(age=as.character(tranche_age),grav=as.character(gravite_accident)) |>
-  filter(grav %in% c("Mortel","Grave","Léger")) |>
-  count(age,grav) |> group_by(age) |>
-  mutate(pct=round(n/sum(n)*100,1)) |> ungroup() |>
-  mutate(age=factor(age,levels=ord_age))
+  mutate(dep_nom=as.character(departement)) |>
+  group_by(dep_nom) |>
+  summarise(age_moy=round(mean(age_moyen_reel,na.rm=TRUE),1), .groups="drop") |>
+  arrange(desc(age_moy))
 
-ggplot(ad,aes(x=age,y=pct,fill=grav)) +
-  geom_col(position="stack",width=0.7) +
-  scale_fill_manual(values=COULEURS,name="Gravité") +
-  scale_y_continuous(labels=function(x) paste0(x,"%")) +
-  labs(title="Gravité par tranche d'âge",x=NULL,y="% accidents") +
+ggplot(ad, aes(x=reorder(dep_nom,age_moy), y=age_moy)) +
+  geom_col(fill=BLEU_MED, width=0.7) +
+  geom_text(aes(label=age_moy), hjust=-0.2, size=3) +
+  coord_flip() +
+  labs(title="Âge moyen des accidentés par département",x=NULL,y="Âge moyen") +
   theme_minimal(base_size=11) +
-  theme(axis.text.x=element_text(angle=30,hjust=1),
-        plot.title=element_text(face="bold",color=BLEU_DARK,size=12),
-        legend.position="bottom",panel.grid.major.x=element_blank())
+  theme(plot.title=element_text(face="bold",color=BLEU_DARK,size=12))
 ```
 
-## Genre
 
-```{r genre_plot, fig.height=3.5}
-grd <- acc |>
-  filter(!is.na(sexe_dominant),as.character(sexe_dominant) %in% c("Homme","Femme")) |>
-  mutate(sexe=as.character(sexe_dominant),grav=as.character(gravite_accident)) |>
-  filter(grav %in% c("Mortel","Grave","Léger")) |>
-  count(sexe,grav) |> group_by(sexe) |>
-  mutate(pct=round(n/sum(n)*100,1)) |> ungroup()
-
-ggplot(grd,aes(x=sexe,y=pct,fill=grav)) +
-  geom_col(position="stack",width=0.5) +
-  geom_text(aes(label=paste0(pct,"%")),position=position_stack(vjust=0.5),
-            color="white",fontface="bold",size=3.5) +
-  scale_fill_manual(values=COULEURS,name="Gravité") +
-  scale_y_continuous(labels=function(x) paste0(x,"%")) +
-  labs(title="Gravité par genre",x=NULL,y="% accidents") +
-  theme_minimal(base_size=11) +
-  theme(plot.title=element_text(face="bold",color=BLEU_DARK,size=12),
-        legend.position="bottom",panel.grid.major.x=element_blank())
-```
-
----
-
-# Conclusion
+## Conclusion
 
 ```{r conclusion}
-d1 <- stats_d$dep_nom[1]; t1 <- stats_d$taux[1]
-dn <- stats_d$dep_nom[nrow(stats_d)]; tn <- stats_d$taux[nrow(stats_d)]
-ec <- round(t1-tn,2)
-
-df_ccl <- data.frame(
-  Indicateur=c(
-    paste0("Total accidents (",kpi$yr_min,"–",kpi$yr_max,")"),
-    "Taux de mortalité régional","Écart vs France",
-    "Département le plus à risque","Département le moins à risque",
-    "Écart intra-régional"),
-  Valeur=c(
-    format(kpi$nb_acc,big.mark=" "),
-    paste0(kpi$taux,"%"),
-    paste0(ifelse(delta>=0,"+",""),round(delta,2),"% (France : ",taux_fr,"%)"),
-    paste0(d1," (",t1,"%)"),
-    paste0(dn," (",tn,"%)"),
-    paste0(ec," points")))
-
-if (knitr::is_latex_output()) {
-  knitr::kable(df_ccl, format="latex", booktabs=TRUE,
-               col.names=c("Indicateur","Valeur"), align=c("l","r")) |>
-    kableExtra::kable_styling(latex_options=c("HOLD_position"), font_size=11)
-} else {
-  knitr::kable(df_ccl, format="html", col.names=c("Indicateur","Valeur"), align=c("l","r")) |>
-    kable_styling(bootstrap_options=c("striped","condensed"),
-                  full_width=FALSE,font_size=13) |>
-    row_spec(2,bold=TRUE,color=ifelse(kpi$taux>taux_fr,"#dc3545","#28a745")) |>
-    row_spec(3,bold=TRUE,color=ifelse(delta>0,"#dc3545","#28a745"))
-}
+best  <- stats_d |> dplyr::slice_head(n=1)
+worst <- stats_d |> dplyr::arrange(taux) |> dplyr::slice_head(n=1)
 ```
 
----
+Ce rapport couvre **`r nrow(acc)`** accidents enregistrés dans la région **`r params$region`** sur la période **`r annee_label`**.
 
-<p style="text-align:center;color:#6c757d;font-size:11px;margin-top:30px;border-top:1px solid #e9ecef;padding-top:12px;">
-CrashAlert v4.0 — BAAC 2015–2024 · data.gouv.fr · Généré le `r format(Sys.Date(),'%d/%m/%Y')`
-</p>
+Le département le plus accidentogène est **`r worst$dep_nom`** (taux mortalité : `r worst$taux`%), tandis que **`r best$dep_nom`** présente le taux le plus élevé (`r best$taux`%).
+
+*Rapport généré automatiquement par CrashAlert v4.0*
