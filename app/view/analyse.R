@@ -1329,7 +1329,7 @@ server_analyse <- function(id, app_data) {
           output_file   = out_file,
           params        = list(
             region    = region_sel,
-            accidents = app_data$accidents_light
+            accidents = app_data$accidents_dashboard
           ),
           envir         = new.env(parent = globalenv()),
           quiet         = TRUE
