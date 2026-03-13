@@ -332,7 +332,9 @@ server_risk_map <- function(id, app_data) {
           params        = list(
             region    = region_sel,
             annee     = input$annee_rapport,
-            accidents = app_data$accidents_dashboard
+            accidents = if(!is.null(input$annee_rapport) && input$annee_rapport != "all") {
+              acc_region |> dplyr::filter(as.character(annee) == input$annee_rapport)
+            } else { acc_region }
           ),
           envir         = new.env(parent = globalenv()),
           quiet         = TRUE

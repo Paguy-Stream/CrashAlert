@@ -23,6 +23,7 @@ output:
 params:
   region: "Île-de-France"
   annee: "all"
+  taux_fr: 0
   accidents: NULL
 ---
 
@@ -35,10 +36,10 @@ COULEURS  <- c("Mortel"="#dc3545","Grave"="#ffc107","Léger"="#28a745")
 BLEU_DARK <- "#1b3a6b"
 BLEU_MED  <- "#4a6fa5"
 
-acc <- params$accidents |> filter(as.character(region) == params$region)
-if (!is.null(params$annee) && params$annee != "all") {
-  acc <- acc |> filter(as.character(annee) == params$annee)
-}
+acc <- params$accidents
+
+
+
 annee_label <- if(is.null(params$annee) || params$annee == "all") "2015–2024" else as.character(params$annee)
 
 depts <- acc |> mutate(dep_nom=as.character(departement)) |>
@@ -51,7 +52,7 @@ kpi <- acc |> summarise(
   taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,2),
   yr_min=min(annee,na.rm=TRUE), yr_max=max(annee,na.rm=TRUE))
 
-taux_fr <- round(mean(params$accidents$gravite_accident=="Mortel",na.rm=TRUE)*100,2)
+taux_fr <- if(!is.null(params$taux_fr) && params$taux_fr > 0) params$taux_fr else round(mean(acc$gravite_accident=="Mortel",na.rm=TRUE)*100,2)
 delta    <- kpi$taux - taux_fr
 
 evol <- acc |> group_by(annee) |> summarise(

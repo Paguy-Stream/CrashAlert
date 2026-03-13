@@ -1306,6 +1306,8 @@ server_analyse <- function(id, app_data) {
     .gen_rapport_ana <- function(format_out) {
       req(input$region_rapport, input$region_rapport != "")
       region_sel <- input$region_rapport
+      acc_region <- app_data$accidents_dashboard |>
+        dplyr::filter(as.character(region) == region_sel)
 
       ext    <- if (format_out == "html_document") "html" else "pdf"
       tmpdir <- tempdir()
@@ -1320,6 +1322,7 @@ server_analyse <- function(id, app_data) {
         "CrashAlert_", gsub("[^A-Za-z0-9]", "_", region_sel), ".", ext
       ))
 
+      taux_fr_val <- round(mean(app_data$accidents_dashboard$gravite_accident=="Mortel",na.rm=TRUE)*100,2)
       withProgress(message = paste("Generation rapport", toupper(ext), "..."),
                    value = 0.2, {
         incProgress(0.3, detail = region_sel)
@@ -1329,7 +1332,8 @@ server_analyse <- function(id, app_data) {
           output_file   = out_file,
           params        = list(
             region    = region_sel,
-            accidents = app_data$accidents_dashboard
+            taux_fr   = taux_fr_val,
+            accidents = acc_region
           ),
           envir         = new.env(parent = globalenv()),
           quiet         = TRUE
