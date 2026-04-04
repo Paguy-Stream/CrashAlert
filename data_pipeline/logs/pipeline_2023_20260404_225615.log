@@ -1,0 +1,108 @@
+[2026-04-04 22:56:15] [INFO] Pipeline BAAC démarré — année cible : 2023 
+[2026-04-04 22:56:15] [INFO] Dossier données : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/donnees 
+[2026-04-04 22:56:15] [INFO] Dossier output  : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_pipeline 
+[2026-04-04 22:56:15] [INFO] === 01_import.R — début === 
+[2026-04-04 22:56:15] [INFO] Fichier 'caracteristiques' détecté : caracteristiques_2023.csv 
+[2026-04-04 22:56:15] [INFO] Fichier 'lieux' détecté : lieux_2023.csv 
+[2026-04-04 22:56:15] [INFO] Fichier 'usagers' détecté : usagers_2023.csv 
+[2026-04-04 22:56:15] [INFO] Fichier 'vehicules' détecté : vehicules_2023.csv 
+[2026-04-04 22:56:15] [INFO]   Lecture caracteristiques_2023.csv (séparateur ';') 
+[2026-04-04 22:56:15] [INFO]   caracteristiques_2023.csv : 54822 lignes, 16 colonnes 
+[2026-04-04 22:56:15] [INFO]   Lecture lieux_2023.csv (séparateur ';') 
+[2026-04-04 22:56:15] [INFO]   lieux_2023.csv : 70860 lignes, 19 colonnes 
+[2026-04-04 22:56:15] [INFO]   Lecture usagers_2023.csv (séparateur ';') 
+[2026-04-04 22:56:16] [INFO]   usagers_2023.csv : 125789 lignes, 17 colonnes 
+[2026-04-04 22:56:16] [INFO]   Lecture vehicules_2023.csv (séparateur ';') 
+[2026-04-04 22:56:16] [INFO]   vehicules_2023.csv : 93585 lignes, 12 colonnes 
+[2026-04-04 22:56:16] [INFO] --- Vérification des tables importées --- 
+[2026-04-04 22:56:16] [INFO]   caracteristiques     : 54822 lignes | 54822 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:56:16] [INFO]   lieux                : 70860 lignes | 54822 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:56:16] [INFO]   usagers              : 125789 lignes | 54822 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:56:16] [INFO]   vehicules            : 93585 lignes | 54822 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:56:18] [INFO] === 01_import.R — terminé === 
+[2026-04-04 22:56:18] [INFO] 01_import terminé en 3.0s 
+[2026-04-04 22:56:18] [INFO] === 02_nettoyage.R — début === 
+[2026-04-04 22:56:20] [INFO] Chaînes vides converties en NA sur les 4 tables 
+[2026-04-04 22:56:20] [INFO] caracteristiques — années présentes : 2023 
+[2026-04-04 22:56:20] [INFO] Types convertis pour lieux 
+[2026-04-04 22:56:20] [INFO] Types convertis pour usagers 
+[2026-04-04 22:56:20] [INFO] Types convertis pour vehicules 
+[2026-04-04 22:56:20] [INFO] hrmn : 100% de valeurs valides 
+[2026-04-04 22:56:21] [INFO] Coordonnées : 94.2% valides (plage France métropolitaine) 
+[2026-04-04 22:56:21] [INFO] Département normalisé sur 2 caractères 
+[2026-04-04 22:56:21] [INFO] Doublons lieux : 15870 accidents avec plusieurs lignes 
+[2026-04-04 22:56:36] [INFO] Doublons résolus : 70860 → 54822 lignes (-16038) 
+[2026-04-04 22:56:36] [INFO] Clés harmonisées en character sur les 4 tables 
+[2026-04-04 22:56:36] [INFO] 'caracteristiques' : toutes les variables sous le seuil de 10% NA 
+[2026-04-04 22:56:36] [WARN] Variables avec > 10% NA dans 'lieux' : 
+[2026-04-04 22:56:36] [WARN]   lartpc                         : 100% 
+[2026-04-04 22:56:36] [INFO] 'usagers' : toutes les variables sous le seuil de 10% NA 
+[2026-04-04 22:56:36] [WARN] Variables avec > 10% NA dans 'vehicules' : 
+[2026-04-04 22:56:36] [WARN]   occutc                         : 99.1% 
+[2026-04-04 22:56:38] [INFO] === 02_nettoyage.R — terminé === 
+[2026-04-04 22:56:38] [INFO] 02_nettoyage terminé en 20.4s 
+[2026-04-04 22:56:38] [INFO] === 03_fusion.R — début === 
+[2026-04-04 22:56:38] [INFO] Agrégation des usagers par accident... 
+[2026-04-04 22:56:39] [INFO] gravite_par_accident : 54822 accidents agrégés 
+[2026-04-04 22:56:39] [INFO] Distribution gravité : Blessé hospitalisé=16582 | Blessé léger=35037 | Mortel=3203 
+[2026-04-04 22:56:39] [INFO] Calcul du profil usager dominant par accident... 
+[2026-04-04 22:57:18] [INFO] profil_usager : 54822 accidents avec profil calculé 
+[2026-04-04 22:57:18] [INFO] Calcul de la catégorie véhicule dominante par accident... 
+[2026-04-04 22:57:25] [INFO] profil_vehicule : 54822 accidents avec catégorie calculée 
+[2026-04-04 22:57:25] [INFO] Fusion des 4 tables au niveau accident... 
+[2026-04-04 22:57:25] [INFO] Base fusionnée : 54822 accidents, 55 colonnes 
+[2026-04-04 22:57:25] [INFO] Accidents sans données lieux    : 0 (0.0%) 
+[2026-04-04 22:57:25] [INFO] Accidents sans gravité          : 0 (0.0%) 
+[2026-04-04 22:57:25] [INFO] Accidents sans usagers          : 0 (0.0%) 
+[2026-04-04 22:57:25] [INFO] Accidents sans catégorie véhic. : 0 (0.0%) 
+[2026-04-04 22:57:26] [INFO] === 03_fusion.R — terminé === 
+[2026-04-04 22:57:26] [INFO] 03_fusion terminé en 48.0s 
+[2026-04-04 22:57:26] [INFO] === 04_enrichissement.R — début === 
+[2026-04-04 22:57:26] [INFO] Création des variables temporelles... 
+[2026-04-04 22:57:27] [INFO] Variables temporelles créées 
+[2026-04-04 22:57:27] [INFO] Ajout des labels BAAC... 
+[2026-04-04 22:57:27] [INFO] Labels ajoutés : lum_label, atm_label, col_label, catr_label, surf_label 
+[2026-04-04 22:57:27] [INFO] Ajout des noms de département et région... 
+[2026-04-04 22:57:27] [INFO] Région : 3181 accidents sans région (5.8%) 
+[2026-04-04 22:57:27] [INFO] Régions distinctes : 14 
+[2026-04-04 22:57:27] [INFO] Filtrage final... 
+[2026-04-04 22:57:28] [INFO] Filtrage : 54822 → 54822 accidents (-0 supprimés) 
+[2026-04-04 22:57:29] [INFO] === 04_enrichissement.R — terminé === 
+[2026-04-04 22:57:29] [INFO] 04_enrichissement terminé en 2.5s 
+[2026-04-04 22:57:29] [INFO] === 05_export.R — début === 
+[2026-04-04 22:57:29] [INFO] Sauvegarde archive année 2023... 
+[2026-04-04 22:57:30] [INFO] Archive : 54822 accidents, 66 colonnes 
+[2026-04-04 22:57:30] [INFO] Concaténation de toutes les années disponibles... 
+[2026-04-04 22:57:30] [INFO] Archives trouvées : accidents_2015.rds, accidents_2016.rds, accidents_2017.rds, accidents_2018.rds, accidents_2019.rds, accidents_2020.rds, accidents_2021.rds, accidents_2022.rds, accidents_2023.rds, accidents_2024.rds 
+[2026-04-04 22:57:30] [INFO]   Chargement accidents_2015.rds : 58654 lignes 
+[2026-04-04 22:57:30] [INFO]   Chargement accidents_2016.rds : 59432 lignes 
+[2026-04-04 22:57:31] [INFO]   Chargement accidents_2017.rds : 60701 lignes 
+[2026-04-04 22:57:31] [INFO]   Chargement accidents_2018.rds : 57783 lignes 
+[2026-04-04 22:57:32] [INFO]   Chargement accidents_2019.rds : 58840 lignes 
+[2026-04-04 22:57:32] [INFO]   Chargement accidents_2020.rds : 47744 lignes 
+[2026-04-04 22:57:32] [INFO]   Chargement accidents_2021.rds : 56518 lignes 
+[2026-04-04 22:57:33] [INFO]   Chargement accidents_2022.rds : 55302 lignes 
+[2026-04-04 22:57:33] [INFO]   Chargement accidents_2023.rds : 54822 lignes 
+[2026-04-04 22:57:33] [INFO]   Chargement accidents_2024.rds : 54402 lignes 
+[2026-04-04 22:57:34] [INFO] Base consolidée : 564198 accidents sur 10 années 
+[2026-04-04 22:57:34] [INFO] Création de accidents_dashboard.rds... 
+[2026-04-04 22:57:34] [WARN] Colonnes absentes du dashboard : type_route 
+[2026-04-04 22:57:35] [INFO] accidents_dashboard : 564198 lignes × 24 colonnes — 105.5 MB RAM 
+[2026-04-04 22:58:07] [INFO] accidents_dashboard.rds sauvegardé 
+[2026-04-04 22:58:07] [INFO] Création de accidents_light.rds... 
+[2026-04-04 22:58:07] [INFO] accidents_light : 564198 lignes × 30 colonnes — 118.4 MB RAM 
+[2026-04-04 22:58:50] [INFO] accidents_light.rds sauvegardé 
+[2026-04-04 22:58:50] [INFO] Création de filters.rds... 
+[2026-04-04 22:58:51] [INFO] filters.rds : 99 départements, 10 années 
+[2026-04-04 22:58:51] [INFO] === RAPPORT FINAL === 
+[2026-04-04 22:58:51] [INFO] Années traitées     : 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 
+[2026-04-04 22:58:52] [INFO] Total accidents     : 564 198 
+[2026-04-04 22:58:52] [INFO] accidents_dashboard : 105.5 MB RAM 
+[2026-04-04 22:58:52] [INFO] accidents_light     : 118.4 MB RAM 
+[2026-04-04 22:58:52] [INFO] Fichiers dans C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_propre : 
+[2026-04-04 22:58:52] [INFO]   accidents_dashboard.rds 
+[2026-04-04 22:58:52] [INFO]   accidents_light.rds 
+[2026-04-04 22:58:52] [INFO]   filters.rds 
+[2026-04-04 22:58:52] [INFO] === 05_export.R — terminé === 
+[2026-04-04 22:58:52] [INFO] 05_export terminé en 82.8s 
+[2026-04-04 22:58:52] [INFO] Pipeline BAAC terminé — 564198 accidents consolidés 

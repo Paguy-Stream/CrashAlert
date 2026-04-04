@@ -519,48 +519,67 @@ server_dashboard <- function(id, app_data, app_filters) {
         plotly::config(displayModeBar=FALSE)
     })
 
-    # Météo
     output$meteo <- renderPlotly({
       d <- filtered() |>
-        dplyr::filter(!is.na(atm_label), atm_label != "") |>
+        dplyr::filter(!is.na(atm_label), atm_label != "", !atm_label %in% c("Non renseigné", "Code NA", "Non renseigne")) |>
         dplyr::mutate(atm_label=as.character(atm_label)) |>
         dplyr::group_by(atm_label) |>
         dplyr::summarise(n=dplyr::n(),
                          mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
                          .groups="drop") |>
-        dplyr::filter(n >= 30) |>
-        dplyr::mutate(taux_mortalite=round(mortels/n*100,1)) |>
-        dplyr::arrange(dplyr::desc(taux_mortalite)) |> dplyr::slice_head(n=6) |>
-        dplyr::arrange(taux_mortalite) |>
-        dplyr::rename(conditions_meteo=atm_label)
-      plot_ly(d, x=~taux_mortalite,
-              y=~factor(conditions_meteo, levels=conditions_meteo),
-              type="bar", orientation="h",
-              marker=list(color=~taux_mortalite,
-                          colorscale=list(c(0,"#fff3cd"),c(1,"#dc3545")),
-                          showscale=FALSE),
-              text=~paste0(round(taux_mortalite,1),"%"),
-              textposition="outside") |>
-        layout(xaxis=list(title="Taux mortalité (%)"),
-               yaxis=list(title="", categoryorder="array",
-                          categoryarray=~conditions_meteo),
-               paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=5,r=60)) |>
-        plotly::config(displayModeBar=FALSE)
-    })
+        dplyr::filter(n >= 5) |>
+        dplyr::mutate(taux_mortalite=round(mortels/n*100,1))
 
+      # Si aucun mortel dans la sélection, afficher la distribution en volume
+      use_volume <- all(d$mortels == 0)
+
+      if (use_volume) {
+        d <- d |> dplyr::arrange(dplyr::desc(n)) |> dplyr::slice_head(n=6) |>
+          dplyr::arrange(n) |> dplyr::rename(conditions_meteo=atm_label)
+        plot_ly(d, x=~n,
+                y=~factor(conditions_meteo, levels=conditions_meteo),
+                type="bar", orientation="h",
+                marker=list(color="#4a6fa5"),
+                text=~format(n, big.mark=" "),
+                textposition="outside") |>
+          layout(xaxis=list(title="Nombre d'accidents"),
+                 yaxis=list(title="", categoryorder="array",
+                            categoryarray=~conditions_meteo),
+                 paper_bgcolor="transparent", plot_bgcolor="transparent",
+                 margin=list(t=5,r=60)) |>
+          plotly::config(displayModeBar=FALSE)
+      } else {
+        d <- d |> dplyr::arrange(dplyr::desc(taux_mortalite)) |>
+          dplyr::slice_head(n=6) |> dplyr::arrange(taux_mortalite) |>
+          dplyr::rename(conditions_meteo=atm_label)
+        plot_ly(d, x=~taux_mortalite,
+                y=~factor(conditions_meteo, levels=conditions_meteo),
+                type="bar", orientation="h",
+                marker=list(color=~taux_mortalite,
+                            colorscale=list(c(0,"#fff3cd"),c(1,"#dc3545")),
+                            showscale=FALSE),
+                text=~paste0(round(taux_mortalite,1),"%"),
+                textposition="outside") |>
+          layout(xaxis=list(title="Taux mortalité (%)"),
+                 yaxis=list(title="", categoryorder="array",
+                            categoryarray=~conditions_meteo),
+                 paper_bgcolor="transparent", plot_bgcolor="transparent",
+                 margin=list(t=5,r=60)) |>
+          plotly::config(displayModeBar=FALSE)
+      }
+    })
     # Route
     output$route <- renderPlotly({
       d <- filtered() |>
-        filter(!is.na(type_route)) |>
-        mutate(type_route=as.character(type_route)) |>
-        group_by(type_route) |>
+        filter(!is.na(catr_label)) |>
+        mutate(catr_label=as.character(catr_label)) |>
+        group_by(catr_label) |>
         summarise(n=n(), mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
                   .groups="drop") |>
         mutate(taux=round(mortels/n*100,1)) |>
         arrange(desc(n)) |> slice_head(n=6)
       d <- d |> dplyr::arrange(desc(n))
-      plot_ly(d, x=~type_route, y=~n,
+      plot_ly(d, x=~catr_label, y=~n,
               type="bar", name="Total",
               marker=list(color="#4a6fa5")) |>
         add_bars(y=~mortels, name="Mortels",
@@ -730,9 +749,9 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     output$interp_route <- renderUI({
       d <- filtered() |>
-        dplyr::filter(!is.na(type_route)) |>
-        dplyr::mutate(type_route=as.character(type_route)) |>
-        dplyr::group_by(type_route) |>
+        dplyr::filter(!is.na(catr_label)) |>
+        dplyr::mutate(catr_label=as.character(catr_label)) |>
+        dplyr::group_by(catr_label) |>
         dplyr::summarise(n=dplyr::n(),
                          mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
                          .groups="drop") |>
@@ -746,8 +765,8 @@ server_dashboard <- function(id, app_data, app_filters) {
         tags$b("🛣 Ce que montre ce graphique :"), tags$br(),
         tags$p(sprintf(
           "Ce graphique montre le volume d’accidents (bleu) et les décès (rouge) par type de route. Les %s concentrent le plus d’accidents (%.1f%% du total) mais ne sont pas forcément les plus dangereux. C’est sur les %s que le taux de mortalité est le plus élevé (%.1f%% des accidents y sont mortels), en raison des vitesses pratiquées et de l’éloignement des secours.",
-          tolower(top_vol$type_route), pct_top,
-          tolower(top_taux$type_route), top_taux$taux
+          tolower(top_vol$catr_label), pct_top,
+          tolower(top_taux$catr_label), top_taux$taux
         ))
       )
     })

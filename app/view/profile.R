@@ -288,7 +288,7 @@ server_profile <- function(id, app_data) {
 
     output$kpi_hommes <- renderText({
       d <- filtered()
-      pct <- round(mean(as.character(d$sexe_dominant)=="Homme",na.rm=TRUE)*100,1)
+      pct <- round(mean(as.character(d$sexe_dominant)=="Masculin",na.rm=TRUE)*100,1)
       paste0(pct," %")
     })
 
@@ -300,7 +300,7 @@ server_profile <- function(id, app_data) {
     })
 
     output$kpi_seniors <- renderText({
-      d <- filtered() |> filter(as.character(tranche_age)=="75+ ans")
+      d <- filtered() |> filter(as.character(tranche_age)=="65 ans et plus")
       if (nrow(d)==0) return("N/A")
       pct <- round(mean(d$gravite_accident=="Mortel",na.rm=TRUE)*100,1)
       paste0(pct," %")
@@ -399,7 +399,7 @@ server_profile <- function(id, app_data) {
     output$age_bar <- renderPlotly({
       req(nrow(filtered()) > 0)
       d <- filtered() |>
-        filter(!is.na(tranche_age), as.character(tranche_age)!="Non renseigne") |>
+        filter(!is.na(tranche_age), as.character(tranche_age)!="Non renseigné") |>
         mutate(age=as.character(tranche_age), grav=as.character(gravite_accident)) |>
         group_by(age,grav) |> summarise(n=n(),.groups="drop")
 
@@ -420,7 +420,7 @@ server_profile <- function(id, app_data) {
         }
       }
       ordre_age2 <- c("0-17 ans","18-24 ans","25-34 ans","35-44 ans",
-                      "45-54 ans","55-64 ans","65-74 ans","75+ ans")
+                      "45-54 ans","55-64 ans","65-74 ans","65 ans et plus")
       p <- plotly::event_register(p, "plotly_click")
       p |> layout(barmode="stack",
                   xaxis=list(title="", tickangle=-30,
@@ -435,12 +435,12 @@ server_profile <- function(id, app_data) {
     output$age_mortalite <- renderPlotly({
       req(nrow(filtered_all()) > 0)
       ordre_age <- c("0-17 ans","18-24 ans","25-34 ans","35-44 ans",
-                     "45-54 ans","55-64 ans","65-74 ans","75+ ans")
+                     "45-54 ans","55-64 ans","65-74 ans","65 ans et plus")
 
       # Deux courbes : Homme vs Femme — taux mortalité par tranche d'âge
       d <- filtered_all() |>
         filter(!is.na(tranche_age), !is.na(sexe_dominant),
-               !as.character(tranche_age) %in% c("Non renseigne","Non renseigné","Inconnu","")) |>
+               !as.character(tranche_age) %in% c("Non renseigné","Non renseigné","Inconnu","")) |>
         mutate(
           age  = as.character(tranche_age),
           sexe = as.character(sexe_dominant)
@@ -453,20 +453,20 @@ server_profile <- function(id, app_data) {
         )
 
       ages_ord <- ordre_age[ordre_age %in% unique(d$age)]
-      d_h <- d |> dplyr::filter(sexe == "Homme") |> dplyr::arrange(match(age, ordre_age))
-      d_f <- d |> dplyr::filter(sexe == "Femme") |> dplyr::arrange(match(age, ordre_age))
+      d_h <- d |> dplyr::filter(sexe == "Masculin") |> dplyr::arrange(match(age, ordre_age))
+      d_f <- d |> dplyr::filter(sexe == "Féminin") |> dplyr::arrange(match(age, ordre_age))
 
       plot_ly(source="age_mortalite") |>
         add_trace(data=d_h, x=~age, y=~taux,
                   type="scatter", mode="lines+markers",
-                  name="Homme",
+                  name="Masculin",
                   line=list(color="#1b3a6b", width=2.5),
                   marker=list(size=8, color="#1b3a6b"),
                   text=~paste0("Homme - ",age,"<br>",taux,"% mortalite"),
                   hoverinfo="text") |>
         add_trace(data=d_f, x=~age, y=~taux,
                   type="scatter", mode="lines+markers",
-                  name="Femme",
+                  name="Féminin",
                   line=list(color="#e74c3c", width=2.5),
                   marker=list(size=8, color="#e74c3c"),
                   text=~paste0("Femme - ",age,"<br>",taux,"% mortalite"),
@@ -503,7 +503,7 @@ server_profile <- function(id, app_data) {
       req(nrow(d) > 0)
       d <- d |>
         filter(!is.na(categorie_vehicule),
-               as.character(categorie_vehicule)!="Non renseigne") |>
+               as.character(categorie_vehicule)!="Non renseigné") |>
         mutate(veh=as.character(categorie_vehicule), grav=as.character(gravite_accident)) |>
         group_by(veh,grav) |> summarise(n=n(),.groups="drop") |>
         group_by(veh) |> mutate(pct=round(n/sum(n)*100,1), total=sum(n)) |>
@@ -541,7 +541,7 @@ server_profile <- function(id, app_data) {
     output$secu <- renderPlotly({
       req(nrow(filtered()) > 0)
       codes_secu <- c(
-        "0"="Non renseigne","1"="Ceinture portee","2"="Casque porte",
+        "0"="Non renseigné","1"="Ceinture portee","2"="Casque porte",
         "3"="Dispos. enfant","4"="Gilet refl.",
         "8"="Non determine","9"="Autre",
         "11"="Ceinture porte","12"="Ceinture non portee",
@@ -574,11 +574,11 @@ server_profile <- function(id, app_data) {
       d <- filtered()
       if (nrow(d)==0) return(NULL)
 
-      pct_h     <- round(mean(as.character(d$sexe_dominant)=="Homme",na.rm=TRUE)*100,1)
+      pct_h     <- round(mean(as.character(d$sexe_dominant)=="Masculin",na.rm=TRUE)*100,1)
       pct_jeune <- round(mean(as.character(d$tranche_age) %in%
                                 c("18-24 ans","25-34 ans"),na.rm=TRUE)*100,1)
       age_mort <- d |>
-        filter(!is.na(tranche_age), as.character(tranche_age)!="Non renseigne") |>
+        filter(!is.na(tranche_age), as.character(tranche_age)!="Non renseigné") |>
         mutate(age=as.character(tranche_age)) |>
         group_by(age) |>
         summarise(taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1),
@@ -587,7 +587,7 @@ server_profile <- function(id, app_data) {
 
       veh_mort <- d |>
         filter(!is.na(categorie_vehicule),
-               as.character(categorie_vehicule)!="Non renseigne") |>
+               as.character(categorie_vehicule)!="Non renseigné") |>
         mutate(veh=as.character(categorie_vehicule)) |>
         group_by(veh) |>
         summarise(n=n(), taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1),
@@ -740,7 +740,7 @@ server_profile <- function(id, app_data) {
       } else if (trigger$source == "secu") {
         secu_sel <- trigger$key
         codes_secu_map <- c(
-          "0"="Non renseigne","1"="Ceinture portee","2"="Casque porte",
+          "0"="Non renseigné","1"="Ceinture portee","2"="Casque porte",
           "3"="Dispos. enfant","4"="Gilet refl.",
           "8"="Non determine","9"="Autre",
           "11"="Ceinture porte","12"="Ceinture non portee",
@@ -848,7 +848,7 @@ server_profile <- function(id, app_data) {
       } else if (trigger$source == "age_mortalite") {
         age_sel  <- trigger$key
         sexe_num <- as.integer(trigger$sexe)
-        sexe_sel <- if(isTRUE(sexe_num == 0)) "Homme" else "Femme"
+        sexe_sel <- if(isTRUE(sexe_num == 0)) "Masculin" else "Féminin"
         d_am <- d |>
           dplyr::filter(
             as.character(tranche_age) == age_sel,

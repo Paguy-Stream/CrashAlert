@@ -1,0 +1,31 @@
+[2026-04-04 22:37:45] [INFO] Pipeline BAAC démarré — année cible : 2015 
+[2026-04-04 22:37:45] [INFO] Dossier données : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/donnees 
+[2026-04-04 22:37:45] [INFO] Dossier output  : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_pipeline 
+[2026-04-04 22:37:45] [INFO] === 01_import.R — début === 
+[2026-04-04 22:37:45] [INFO] Fichier 'caracteristiques' détecté : caracteristiques_2015.csv 
+[2026-04-04 22:37:45] [INFO] Fichier 'lieux' détecté : lieux_2015.csv 
+[2026-04-04 22:37:45] [INFO] Fichier 'usagers' détecté : usagers_2015.csv 
+[2026-04-04 22:37:45] [INFO] Fichier 'vehicules' détecté : vehicules_2015.csv 
+[2026-04-04 22:37:45] [INFO]   Lecture caracteristiques_2015.csv (séparateur ',') 
+[2026-04-04 22:37:45] [INFO]   caracteristiques_2015.csv : 58654 lignes, 17 colonnes 
+[2026-04-04 22:37:45] [INFO]   Lecture lieux_2015.csv (séparateur ',') 
+[2026-04-04 22:37:45] [INFO]   lieux_2015.csv : 58654 lignes, 19 colonnes 
+[2026-04-04 22:37:45] [INFO]   Lecture usagers_2015.csv (séparateur ',') 
+[2026-04-04 22:37:46] [INFO]   usagers_2015.csv : 130378 lignes, 13 colonnes 
+[2026-04-04 22:37:46] [INFO]   Lecture vehicules_2015.csv (séparateur ',') 
+[2026-04-04 22:37:46] [INFO]   vehicules_2015.csv : 99778 lignes, 10 colonnes 
+[2026-04-04 22:37:46] [INFO] --- Vérification des tables importées --- 
+[2026-04-04 22:37:46] [INFO]   caracteristiques     : 58654 lignes | 58654 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:37:46] [INFO]   lieux                : 58654 lignes | 58654 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:37:46] [INFO]   usagers              : 130378 lignes | 58654 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:37:46] [INFO]   vehicules            : 99778 lignes | 58654 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:37:47] [INFO] === 01_import.R — terminé === 
+[2026-04-04 22:37:47] [INFO] 01_import terminé en 2.3s 
+[2026-04-04 22:37:47] [INFO] === 02_nettoyage.R — début === 
+[2026-04-04 22:37:48] [ERROR] ERREUR dans 02_nettoyage : [38;5;232m[36mℹ[38;5;232m In argument:
+  `across(where(is.character), ~na_if(trimws(.),
+  ""))`.[39m
+[1mCaused by error in `across()`:[22m
+[38;5;232m[33m![38;5;232m Can't compute column `adr`.[39m
+[1mCaused by error in `sub()`:[22m
+[33m![39m input string 5 is invalid UTF-8 

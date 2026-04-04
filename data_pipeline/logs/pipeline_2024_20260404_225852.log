@@ -1,0 +1,38 @@
+[2026-04-04 22:58:52] [INFO] Pipeline BAAC démarré — année cible : 2024 
+[2026-04-04 22:58:52] [INFO] Dossier données : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/donnees 
+[2026-04-04 22:58:52] [INFO] Dossier output  : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_pipeline 
+[2026-04-04 22:58:52] [INFO] === 05_export.R — début === 
+[2026-04-04 22:58:52] [INFO] Sauvegarde archive année 2024... 
+[2026-04-04 22:58:53] [INFO] Archive : 54822 accidents, 66 colonnes 
+[2026-04-04 22:58:53] [INFO] Concaténation de toutes les années disponibles... 
+[2026-04-04 22:58:53] [INFO] Archives trouvées : accidents_2015.rds, accidents_2016.rds, accidents_2017.rds, accidents_2018.rds, accidents_2019.rds, accidents_2020.rds, accidents_2021.rds, accidents_2022.rds, accidents_2023.rds, accidents_2024.rds 
+[2026-04-04 22:58:54] [INFO]   Chargement accidents_2015.rds : 58654 lignes 
+[2026-04-04 22:58:54] [INFO]   Chargement accidents_2016.rds : 59432 lignes 
+[2026-04-04 22:58:55] [INFO]   Chargement accidents_2017.rds : 60701 lignes 
+[2026-04-04 22:58:56] [INFO]   Chargement accidents_2018.rds : 57783 lignes 
+[2026-04-04 22:58:56] [INFO]   Chargement accidents_2019.rds : 58840 lignes 
+[2026-04-04 22:58:57] [INFO]   Chargement accidents_2020.rds : 47744 lignes 
+[2026-04-04 22:58:57] [INFO]   Chargement accidents_2021.rds : 56518 lignes 
+[2026-04-04 22:58:58] [INFO]   Chargement accidents_2022.rds : 55302 lignes 
+[2026-04-04 22:58:58] [INFO]   Chargement accidents_2023.rds : 54822 lignes 
+[2026-04-04 22:58:59] [INFO]   Chargement accidents_2024.rds : 54822 lignes 
+[2026-04-04 22:58:59] [INFO] Base consolidée : 564618 accidents sur 9 années 
+[2026-04-04 22:58:59] [INFO] Création de accidents_dashboard.rds... 
+[2026-04-04 22:58:59] [WARN] Colonnes absentes du dashboard : type_route 
+[2026-04-04 22:59:00] [INFO] accidents_dashboard : 564618 lignes × 24 colonnes — 102.2 MB RAM 
+[2026-04-04 22:59:33] [INFO] accidents_dashboard.rds sauvegardé 
+[2026-04-04 22:59:33] [INFO] Création de accidents_light.rds... 
+[2026-04-04 22:59:34] [INFO] accidents_light : 564618 lignes × 30 colonnes — 115.1 MB RAM 
+[2026-04-04 23:00:09] [INFO] accidents_light.rds sauvegardé 
+[2026-04-04 23:00:09] [INFO] Création de filters.rds... 
+[2026-04-04 23:00:10] [INFO] filters.rds : 99 départements, 9 années 
+[2026-04-04 23:00:10] [INFO] === RAPPORT FINAL === 
+[2026-04-04 23:00:10] [INFO] Années traitées     : 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 
+[2026-04-04 23:00:10] [INFO] Total accidents     : 564 618 
+[2026-04-04 23:00:10] [INFO] accidents_dashboard : 102.2 MB RAM 
+[2026-04-04 23:00:10] [INFO] accidents_light     : 115.1 MB RAM 
+[2026-04-04 23:00:10] [INFO] Fichiers dans C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_propre : 
+[2026-04-04 23:00:10] [INFO]   accidents_dashboard.rds 
+[2026-04-04 23:00:10] [INFO]   accidents_light.rds 
+[2026-04-04 23:00:10] [INFO]   filters.rds 
+[2026-04-04 23:00:10] [INFO] === 05_export.R — terminé === 

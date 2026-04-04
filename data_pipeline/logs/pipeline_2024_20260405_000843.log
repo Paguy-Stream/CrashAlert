@@ -1,0 +1,64 @@
+[2026-04-05 00:08:43] [INFO] Pipeline BAAC démarré — année cible : 2024 
+[2026-04-05 00:08:43] [INFO] Dossier données : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/donnees 
+[2026-04-05 00:08:43] [INFO] Dossier output  : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_pipeline 
+[2026-04-05 00:08:43] [INFO] === 03_fusion.R — début === 
+[2026-04-05 00:08:43] [INFO] Agrégation des usagers par accident... 
+[2026-04-05 00:08:44] [INFO] gravite_par_accident : 54402 accidents agrégés 
+[2026-04-05 00:08:44] [INFO] Distribution gravité : Grave=16432 | Léger=34744 | Mortel=3226 
+[2026-04-05 00:08:44] [INFO] Calcul du profil usager dominant par accident... 
+[2026-04-05 00:09:17] [INFO] profil_usager : 54402 accidents avec profil calculé 
+[2026-04-05 00:09:17] [INFO] Calcul de la catégorie véhicule dominante par accident... 
+[2026-04-05 00:09:24] [INFO] profil_vehicule : 54402 accidents avec catégorie calculée 
+[2026-04-05 00:09:24] [INFO] Fusion des 4 tables au niveau accident... 
+[2026-04-05 00:09:25] [INFO] Base fusionnée : 54402 accidents, 55 colonnes 
+[2026-04-05 00:09:25] [INFO] Accidents sans données lieux    : 0 (0.0%) 
+[2026-04-05 00:09:25] [INFO] Accidents sans gravité          : 0 (0.0%) 
+[2026-04-05 00:09:25] [INFO] Accidents sans usagers          : 0 (0.0%) 
+[2026-04-05 00:09:25] [INFO] Accidents sans catégorie véhic. : 0 (0.0%) 
+[2026-04-05 00:09:25] [INFO] === 03_fusion.R — terminé === 
+[2026-04-05 00:09:25] [INFO] === 04_enrichissement.R — début === 
+[2026-04-05 00:09:25] [INFO] Création des variables temporelles... 
+[2026-04-05 00:09:26] [INFO] Variables temporelles créées 
+[2026-04-05 00:09:26] [INFO] Ajout des labels BAAC... 
+[2026-04-05 00:09:26] [INFO] Labels ajoutés : lum_label, atm_label, col_label, catr_label, surf_label 
+[2026-04-05 00:09:26] [INFO] Ajout des noms de département et région... 
+[2026-04-05 00:09:27] [INFO] Région : 3344 accidents sans région (6.1%) 
+[2026-04-05 00:09:27] [INFO] Régions distinctes : 14 
+[2026-04-05 00:09:27] [INFO] Filtrage final... 
+[2026-04-05 00:09:27] [INFO] Filtrage : 54402 → 54402 accidents (-0 supprimés) 
+[2026-04-05 00:09:27] [INFO] === 04_enrichissement.R — terminé === 
+[2026-04-05 00:09:27] [INFO] === 05_export.R — début === 
+[2026-04-05 00:09:27] [INFO] Sauvegarde archive année 2024... 
+[2026-04-05 00:09:28] [INFO] Archive : 54402 accidents, 66 colonnes 
+[2026-04-05 00:09:28] [INFO] Concaténation de toutes les années disponibles... 
+[2026-04-05 00:09:28] [INFO] Archives trouvées : accidents_2015.rds, accidents_2016.rds, accidents_2017.rds, accidents_2018.rds, accidents_2019.rds, accidents_2020.rds, accidents_2021.rds, accidents_2022.rds, accidents_2023.rds, accidents_2024.rds 
+[2026-04-05 00:09:29] [INFO]   Chargement accidents_2015.rds : 58654 lignes 
+[2026-04-05 00:09:29] [INFO]   Chargement accidents_2016.rds : 59432 lignes 
+[2026-04-05 00:09:29] [INFO]   Chargement accidents_2017.rds : 60701 lignes 
+[2026-04-05 00:09:30] [INFO]   Chargement accidents_2018.rds : 57783 lignes 
+[2026-04-05 00:09:30] [INFO]   Chargement accidents_2019.rds : 58840 lignes 
+[2026-04-05 00:09:30] [INFO]   Chargement accidents_2020.rds : 47744 lignes 
+[2026-04-05 00:09:31] [INFO]   Chargement accidents_2021.rds : 56518 lignes 
+[2026-04-05 00:09:31] [INFO]   Chargement accidents_2022.rds : 55302 lignes 
+[2026-04-05 00:09:31] [INFO]   Chargement accidents_2023.rds : 54822 lignes 
+[2026-04-05 00:09:32] [INFO]   Chargement accidents_2024.rds : 54402 lignes 
+[2026-04-05 00:09:32] [INFO] Base consolidée : 564198 accidents sur 10 années 
+[2026-04-05 00:09:32] [INFO] Création de accidents_dashboard.rds... 
+[2026-04-05 00:09:32] [WARN] Colonnes absentes du dashboard : type_route 
+[2026-04-05 00:09:32] [INFO] accidents_dashboard : 564198 lignes × 24 colonnes — 105.5 MB RAM 
+[2026-04-05 00:10:31] [INFO] accidents_dashboard.rds sauvegardé 
+[2026-04-05 00:10:31] [INFO] Création de accidents_light.rds... 
+[2026-04-05 00:10:31] [INFO] accidents_light : 564198 lignes × 30 colonnes — 118.4 MB RAM 
+[2026-04-05 00:11:23] [INFO] accidents_light.rds sauvegardé 
+[2026-04-05 00:11:23] [INFO] Création de filters.rds... 
+[2026-04-05 00:11:24] [INFO] filters.rds : 99 départements, 10 années 
+[2026-04-05 00:11:24] [INFO] === RAPPORT FINAL === 
+[2026-04-05 00:11:24] [INFO] Années traitées     : 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 
+[2026-04-05 00:11:24] [INFO] Total accidents     : 564 198 
+[2026-04-05 00:11:24] [INFO] accidents_dashboard : 105.5 MB RAM 
+[2026-04-05 00:11:24] [INFO] accidents_light     : 118.4 MB RAM 
+[2026-04-05 00:11:24] [INFO] Fichiers dans C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_propre : 
+[2026-04-05 00:11:24] [INFO]   accidents_dashboard.rds 
+[2026-04-05 00:11:24] [INFO]   accidents_light.rds 
+[2026-04-05 00:11:24] [INFO]   filters.rds 
+[2026-04-05 00:11:24] [INFO] === 05_export.R — terminé === 

@@ -1,0 +1,107 @@
+[2026-04-04 22:53:56] [INFO] Pipeline BAAC démarré — année cible : 2022 
+[2026-04-04 22:53:56] [INFO] Dossier données : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/donnees 
+[2026-04-04 22:53:56] [INFO] Dossier output  : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_pipeline 
+[2026-04-04 22:53:56] [INFO] === 01_import.R — début === 
+[2026-04-04 22:53:56] [INFO] Fichier 'caracteristiques' détecté : caracteristiques_2022.csv 
+[2026-04-04 22:53:56] [INFO] Fichier 'lieux' détecté : lieux_2022.csv 
+[2026-04-04 22:53:56] [INFO] Fichier 'usagers' détecté : usagers_2022.csv 
+[2026-04-04 22:53:57] [INFO] Fichier 'vehicules' détecté : vehicules_2022.csv 
+[2026-04-04 22:53:57] [INFO]   Lecture caracteristiques_2022.csv (séparateur ';') 
+[2026-04-04 22:53:57] [INFO]   Colonne 'Accident_Id' renommée en 'Num_Acc' 
+[2026-04-04 22:53:57] [INFO]   caracteristiques_2022.csv : 55302 lignes, 16 colonnes 
+[2026-04-04 22:53:57] [INFO]   Lecture lieux_2022.csv (séparateur ';') 
+[2026-04-04 22:53:57] [INFO]   lieux_2022.csv : 55302 lignes, 19 colonnes 
+[2026-04-04 22:53:57] [INFO]   Lecture usagers_2022.csv (séparateur ';') 
+[2026-04-04 22:53:57] [INFO]   usagers_2022.csv : 126662 lignes, 17 colonnes 
+[2026-04-04 22:53:57] [INFO]   Lecture vehicules_2022.csv (séparateur ';') 
+[2026-04-04 22:53:57] [INFO]   vehicules_2022.csv : 94493 lignes, 12 colonnes 
+[2026-04-04 22:53:57] [INFO] --- Vérification des tables importées --- 
+[2026-04-04 22:53:57] [INFO]   caracteristiques     : 55302 lignes | 55302 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:53:57] [INFO]   lieux                : 55302 lignes | 55302 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:53:57] [INFO]   usagers              : 126662 lignes | 55302 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:53:57] [INFO]   vehicules            : 94493 lignes | 55302 Num_Acc uniques | 0 NA sur clé 
+[2026-04-04 22:54:00] [INFO] === 01_import.R — terminé === 
+[2026-04-04 22:54:00] [INFO] 01_import terminé en 3.1s 
+[2026-04-04 22:54:00] [INFO] === 02_nettoyage.R — début === 
+[2026-04-04 22:54:02] [INFO] Chaînes vides converties en NA sur les 4 tables 
+[2026-04-04 22:54:02] [INFO] caracteristiques — années présentes : 2022 
+[2026-04-04 22:54:02] [INFO] Types convertis pour lieux 
+[2026-04-04 22:54:03] [INFO] Types convertis pour usagers 
+[2026-04-04 22:54:03] [INFO] Types convertis pour vehicules 
+[2026-04-04 22:54:03] [INFO] hrmn : 100% de valeurs valides 
+[2026-04-04 22:54:03] [INFO] Coordonnées : 94.7% valides (plage France métropolitaine) 
+[2026-04-04 22:54:03] [INFO] Département normalisé sur 2 caractères 
+[2026-04-04 22:54:03] [INFO] Aucun doublon détecté dans lieux 
+[2026-04-04 22:54:04] [INFO] Clés harmonisées en character sur les 4 tables 
+[2026-04-04 22:54:04] [INFO] 'caracteristiques' : toutes les variables sous le seuil de 10% NA 
+[2026-04-04 22:54:04] [WARN] Variables avec > 10% NA dans 'lieux' : 
+[2026-04-04 22:54:04] [WARN]   lartpc                         : 99.9% 
+[2026-04-04 22:54:04] [INFO] 'usagers' : toutes les variables sous le seuil de 10% NA 
+[2026-04-04 22:54:04] [WARN] Variables avec > 10% NA dans 'vehicules' : 
+[2026-04-04 22:54:04] [WARN]   occutc                         : 99.1% 
+[2026-04-04 22:54:06] [INFO] === 02_nettoyage.R — terminé === 
+[2026-04-04 22:54:06] [INFO] 02_nettoyage terminé en 6.4s 
+[2026-04-04 22:54:06] [INFO] === 03_fusion.R — début === 
+[2026-04-04 22:54:06] [INFO] Agrégation des usagers par accident... 
+[2026-04-04 22:54:07] [INFO] gravite_par_accident : 55302 accidents agrégés 
+[2026-04-04 22:54:07] [INFO] Distribution gravité : Blessé hospitalisé=16574 | Blessé léger=35391 | Mortel=3337 
+[2026-04-04 22:54:07] [INFO] Calcul du profil usager dominant par accident... 
+[2026-04-04 22:54:49] [INFO] profil_usager : 55302 accidents avec profil calculé 
+[2026-04-04 22:54:49] [INFO] Calcul de la catégorie véhicule dominante par accident... 
+[2026-04-04 22:54:56] [INFO] profil_vehicule : 55302 accidents avec catégorie calculée 
+[2026-04-04 22:54:56] [INFO] Fusion des 4 tables au niveau accident... 
+[2026-04-04 22:54:56] [INFO] Base fusionnée : 55302 accidents, 55 colonnes 
+[2026-04-04 22:54:56] [INFO] Accidents sans données lieux    : 0 (0.0%) 
+[2026-04-04 22:54:56] [INFO] Accidents sans gravité          : 0 (0.0%) 
+[2026-04-04 22:54:56] [INFO] Accidents sans usagers          : 0 (0.0%) 
+[2026-04-04 22:54:56] [INFO] Accidents sans catégorie véhic. : 0 (0.0%) 
+[2026-04-04 22:54:57] [INFO] === 03_fusion.R — terminé === 
+[2026-04-04 22:54:57] [INFO] 03_fusion terminé en 51.2s 
+[2026-04-04 22:54:57] [INFO] === 04_enrichissement.R — début === 
+[2026-04-04 22:54:57] [INFO] Création des variables temporelles... 
+[2026-04-04 22:54:58] [INFO] Variables temporelles créées 
+[2026-04-04 22:54:58] [INFO] Ajout des labels BAAC... 
+[2026-04-04 22:54:59] [INFO] Labels ajoutés : lum_label, atm_label, col_label, catr_label, surf_label 
+[2026-04-04 22:54:59] [INFO] Ajout des noms de département et région... 
+[2026-04-04 22:54:59] [INFO] Région : 2922 accidents sans région (5.3%) 
+[2026-04-04 22:54:59] [INFO] Régions distinctes : 14 
+[2026-04-04 22:54:59] [INFO] Filtrage final... 
+[2026-04-04 22:54:59] [INFO] Filtrage : 55302 → 55302 accidents (-0 supprimés) 
+[2026-04-04 22:55:00] [INFO] === 04_enrichissement.R — terminé === 
+[2026-04-04 22:55:00] [INFO] 04_enrichissement terminé en 2.5s 
+[2026-04-04 22:55:00] [INFO] === 05_export.R — début === 
+[2026-04-04 22:55:00] [INFO] Sauvegarde archive année 2022... 
+[2026-04-04 22:55:01] [INFO] Archive : 55302 accidents, 66 colonnes 
+[2026-04-04 22:55:01] [INFO] Concaténation de toutes les années disponibles... 
+[2026-04-04 22:55:01] [INFO] Archives trouvées : accidents_2015.rds, accidents_2016.rds, accidents_2017.rds, accidents_2018.rds, accidents_2019.rds, accidents_2020.rds, accidents_2021.rds, accidents_2022.rds, accidents_2024.rds 
+[2026-04-04 22:55:01] [INFO]   Chargement accidents_2015.rds : 58654 lignes 
+[2026-04-04 22:55:02] [INFO]   Chargement accidents_2016.rds : 59432 lignes 
+[2026-04-04 22:55:02] [INFO]   Chargement accidents_2017.rds : 60701 lignes 
+[2026-04-04 22:55:02] [INFO]   Chargement accidents_2018.rds : 57783 lignes 
+[2026-04-04 22:55:03] [INFO]   Chargement accidents_2019.rds : 58840 lignes 
+[2026-04-04 22:55:03] [INFO]   Chargement accidents_2020.rds : 47744 lignes 
+[2026-04-04 22:55:03] [INFO]   Chargement accidents_2021.rds : 56518 lignes 
+[2026-04-04 22:55:04] [INFO]   Chargement accidents_2022.rds : 55302 lignes 
+[2026-04-04 22:55:04] [INFO]   Chargement accidents_2024.rds : 54402 lignes 
+[2026-04-04 22:55:05] [INFO] Base consolidée : 509376 accidents sur 9 années 
+[2026-04-04 22:55:05] [INFO] Création de accidents_dashboard.rds... 
+[2026-04-04 22:55:05] [WARN] Colonnes absentes du dashboard : type_route 
+[2026-04-04 22:55:05] [INFO] accidents_dashboard : 509376 lignes × 24 colonnes — 95.2 MB RAM 
+[2026-04-04 22:55:35] [INFO] accidents_dashboard.rds sauvegardé 
+[2026-04-04 22:55:35] [INFO] Création de accidents_light.rds... 
+[2026-04-04 22:55:35] [INFO] accidents_light : 509376 lignes × 30 colonnes — 106.9 MB RAM 
+[2026-04-04 22:56:13] [INFO] accidents_light.rds sauvegardé 
+[2026-04-04 22:56:13] [INFO] Création de filters.rds... 
+[2026-04-04 22:56:15] [INFO] filters.rds : 99 départements, 9 années 
+[2026-04-04 22:56:15] [INFO] === RAPPORT FINAL === 
+[2026-04-04 22:56:15] [INFO] Années traitées     : 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2024 
+[2026-04-04 22:56:15] [INFO] Total accidents     : 509 376 
+[2026-04-04 22:56:15] [INFO] accidents_dashboard : 95.2 MB RAM 
+[2026-04-04 22:56:15] [INFO] accidents_light     : 106.9 MB RAM 
+[2026-04-04 22:56:15] [INFO] Fichiers dans C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_propre : 
+[2026-04-04 22:56:15] [INFO]   accidents_dashboard.rds 
+[2026-04-04 22:56:15] [INFO]   accidents_light.rds 
+[2026-04-04 22:56:15] [INFO]   filters.rds 
+[2026-04-04 22:56:15] [INFO] === 05_export.R — terminé === 
+[2026-04-04 22:56:15] [INFO] 05_export terminé en 74.9s 
+[2026-04-04 22:56:15] [INFO] Pipeline BAAC terminé — 509376 accidents consolidés 

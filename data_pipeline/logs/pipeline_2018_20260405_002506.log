@@ -1,0 +1,29 @@
+[2026-04-05 00:25:06] [INFO] Pipeline BAAC démarré — année cible : 2018 
+[2026-04-05 00:25:06] [INFO] Dossier données : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/donnees 
+[2026-04-05 00:25:06] [INFO] Dossier output  : C:/Users/emman/Documents/mon_projet_rhino/CrashAlert/data_pipeline 
+[2026-04-05 00:25:07] [INFO] === 03_fusion.R — début === 
+[2026-04-05 00:25:07] [INFO] Agrégation des usagers par accident... 
+[2026-04-05 00:25:08] [INFO] gravite_par_accident : 57783 accidents agrégés 
+[2026-04-05 00:25:08] [INFO] Distribution gravité : Grave=19185 | Léger=35412 | Mortel=3186 
+[2026-04-05 00:25:08] [INFO] Calcul du profil usager dominant par accident... 
+[2026-04-05 00:25:36] [INFO] profil_usager : 57783 accidents avec profil calculé 
+[2026-04-05 00:25:36] [INFO] Calcul de la catégorie véhicule dominante par accident... 
+[2026-04-05 00:25:43] [INFO] profil_vehicule : 57783 accidents avec catégorie calculée 
+[2026-04-05 00:25:43] [INFO] Fusion des 4 tables au niveau accident... 
+[2026-04-05 00:25:44] [INFO] Base fusionnée : 57783 accidents, 56 colonnes 
+[2026-04-05 00:25:44] [INFO] Accidents sans données lieux    : 0 (0.0%) 
+[2026-04-05 00:25:44] [INFO] Accidents sans gravité          : 0 (0.0%) 
+[2026-04-05 00:25:44] [INFO] Accidents sans usagers          : 0 (0.0%) 
+[2026-04-05 00:25:44] [INFO] Accidents sans catégorie véhic. : 0 (0.0%) 
+[2026-04-05 00:25:44] [INFO] === 03_fusion.R — terminé === 
+[2026-04-05 00:25:44] [INFO] === 04_enrichissement.R — début === 
+[2026-04-05 00:25:44] [INFO] Création des variables temporelles... 
+[2026-04-05 00:25:45] [INFO] Variables temporelles créées 
+[2026-04-05 00:25:45] [INFO] Ajout des labels BAAC... 
+[2026-04-05 00:25:46] [INFO] Labels ajoutés : lum_label, atm_label, col_label, catr_label, surf_label 
+[2026-04-05 00:25:46] [INFO] Ajout des noms de département et région... 
+[2026-04-05 00:25:46] [INFO] Région : 2017 accidents sans région (3.5%) 
+[2026-04-05 00:25:46] [INFO] Régions distinctes : 14 
+[2026-04-05 00:25:46] [INFO] Filtrage final... 
+[2026-04-05 00:25:46] [INFO] Filtrage : 57783 → 57783 accidents (-0 supprimés) 
+[2026-04-05 00:25:46] [INFO] === 04_enrichissement.R — terminé === 
