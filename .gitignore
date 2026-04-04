@@ -18,3 +18,16 @@ app/report/*.pdf
 # OS
 .DS_Store
 Thumbs.db
+
+# Données brutes BAAC
+donnees/*.csv
+
+# Fichiers intermédiaires pipeline
+data_pipeline/01_*.rds
+data_pipeline/02_*.rds
+data_pipeline/03_*.rds
+data_pipeline/04_*.rds
+data_pipeline/logs/
+
+# Archives années (garder seulement accidents_YYYY.rds)
+# data_pipeline/accidents_*.rds  <- garder pour la concaténation
