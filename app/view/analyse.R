@@ -508,39 +508,16 @@ server_analyse <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
     # Calcul features (une seule fois)
-    features <- reactive({
-      .run_clustering(.prepare_features(app_data$accidents_light))
-    })
+    features <- reactive({ app_data$features_clustering })
 
     # Données temporelles pré-calculées (une seule fois)
     evol_data <- reactive({
-      app_data$accidents_light |>
-        mutate(dep_raw = as.character(dep)) |>
-        mutate(dep_clean = case_when(
-          dep_raw == "201" ~ "2A", dep_raw == "202" ~ "2B",
-          nchar(dep_raw)==3 & grepl("0$",dep_raw) &
-            !dep_raw %in% .DOMTOM ~ sub("0$","",dep_raw),
-          nchar(dep_raw)==1 ~ paste0("0",dep_raw),
-          TRUE ~ dep_raw
-        )) |>
-        filter(!dep_clean %in% .DOMTOM) |>
-        group_by(annee, dep_clean) |>
-        summarise(
-          departement = first(as.character(departement)),
-          taux_mort   = round(mean(gravite_accident=="Mortel")*100, 2),
-          n           = n(),
-          .groups     = "drop"
-        ) |>
-        filter(n >= 50)
+      app_data$agg_evol_dept
     })
 
     # Tendance nationale
     evol_france <- reactive({
-      app_data$accidents_light |>
-        filter(!as.character(dep) %in% .DOMTOM) |>
-        group_by(annee) |>
-        summarise(taux_mort = round(mean(gravite_accident=="Mortel")*100, 3),
-                  .groups="drop")
+      app_data$agg_evol_france
     })
 
     # Tendances par département (pente + R²)

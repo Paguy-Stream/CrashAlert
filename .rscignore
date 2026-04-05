@@ -1,7 +1,10 @@
-.github
-.lintr
-.renvignore
-.Renviron
-.rhino
-.rscignore
-tests
+00_config.R
+01_import.R
+02_nettoyage.R
+03_fusion.R
+04_enrichissement.R
+05_export.R
+run_pipeline.R
+test_pipeline.R
+donnees/
+data_pipeline/

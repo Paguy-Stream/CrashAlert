@@ -1,10 +1,10 @@
-name: CrashCirculation
+name: CrashCirculation2
 title:
 username: paguystream
 account: paguystream
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 13679954
-bundleId: 11805873
-url: https://paguystream.shinyapps.io/CrashCirculation/
+appId: 17058106
+bundleId: 11805830
+url: https://paguystream.shinyapps.io/CrashCirculation2/
 version: 1

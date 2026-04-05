@@ -1,0 +1,12 @@
+Package: CrashCirculation
+Type: Shiny
+Imports:
+  rhino,
+  shiny,
+  bslib,
+  dplyr,
+  plotly,
+  leaflet,
+  sf,
+  DT,
+  rmarkdown
