@@ -1,6 +1,6 @@
 # app/view/facteurs.R
 box::use(
-  shiny[NS, moduleServer, tags, tagList, uiOutput, renderUI,
+  shiny[NS, moduleServer, tags, tagList, uiOutput, renderUI, observeEvent,
         textOutput, renderText, HTML, div, span, p, selectInput,
         updateSelectInput, observe, reactive, req],
   bslib[layout_columns, card, card_header, card_body, value_box],
@@ -190,7 +190,27 @@ server_facteurs <- function(id, app_data) {
       updateSelectInput(session, "deps",       choices=deps,                 selected=character(0))
     })
 
-    observe({
+        # Mettre a jour type_route selon la selection courante
+        observeEvent(list(input$annees, input$regions, input$deps),
+                     ignoreNULL=FALSE, ignoreInit=FALSE, {
+          d_temp <- app_data$accidents_dashboard
+          if (length(input$annees) > 0) d_temp <- d_temp |>
+            dplyr::filter(annee %in% as.numeric(input$annees))
+          if (length(input$regions) > 0) d_temp <- d_temp |>
+            dplyr::filter(as.character(region) %in% input$regions)
+          if (length(input$deps) > 0) d_temp <- d_temp |>
+            dplyr::filter(as.character(departement) %in% input$deps)
+          routes_dispo <- d_temp |>
+            dplyr::count(catr_label) |>
+            dplyr::filter(n >= 5, !is.na(catr_label),
+                          as.character(catr_label) != 'Non renseigné') |>
+            dplyr::arrange(dplyr::desc(n)) |>
+            dplyr::pull(catr_label) |> as.character()
+          updateSelectInput(session, 'type_route',
+            choices = routes_dispo, selected = character(0))
+        })
+
+    observeEvent(input$regions, ignoreNULL=FALSE, ignoreInit=TRUE, {
       req(length(input$regions) > 0)
       deps_f <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(region) %in% input$regions) |>
@@ -198,7 +218,7 @@ server_facteurs <- function(id, app_data) {
       updateSelectInput(session, "deps", choices=deps_f, selected=character(0))
     })
 
-    observe({
+    observeEvent(input$deps, ignoreNULL=FALSE, ignoreInit=TRUE, {
       req(length(input$deps) > 0)
       regs_f <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(departement) %in% input$deps) |>
@@ -230,8 +250,7 @@ server_facteurs <- function(id, app_data) {
       sprintf("#%02X%02X%02X", pmin(r,255), pmin(g,255), pmin(b,255))
     }
     output$data_summary <- renderUI({
-      tagList(bs_icon("database"), " ",
-              tags$strong(format(nrow(filtered()), big.mark="\u00a0")), " accidents")
+      tagList(bs_icon("database"), " ", tags$strong(format(nrow(filtered()), big.mark="u00a0")), " accidents", if(nrow(filtered()) < 30) tags$span(style="margin-left:8px;color:#e74c3c;font-size:11px;font-weight:600;", bs_icon("exclamation-triangle"), " Donnu00e9es insuffisantes"))
     })
 
     # ── KPI ──────────────────────────────────────────────────────────────────
@@ -301,13 +320,13 @@ server_facteurs <- function(id, app_data) {
     # ── Meteo taux ────────────────────────────────────────────────────────────
     output$meteo_taux <- renderPlotly({
       req(nrow(filtered()) > 0)
-      .bar_taux(.taux_var(filtered(), "atm_label", min_n=100))
+      .bar_taux(.taux_var(filtered(), "atm_label", min_n=max(5, round(nrow(filtered())*0.01))))
     })
 
     # ── Luminosite taux ───────────────────────────────────────────────────────
     output$lum_taux <- renderPlotly({
       req(nrow(filtered()) > 0)
-      d <- .taux_var(filtered(), "lum_label", min_n=100) |>
+      d <- .taux_var(filtered(), "lum_label", min_n=max(5, round(nrow(filtered())*0.01))) |>
         mutate(val = gsub("avec \u00e9clairage public ", "\u00e9cl. ", val))
       .bar_taux(d)
     })
@@ -315,7 +334,7 @@ server_facteurs <- function(id, app_data) {
     # ── Surface taux ──────────────────────────────────────────────────────────
     output$surf_taux <- renderPlotly({
       req(nrow(filtered()) > 0)
-      .bar_taux(.taux_var(filtered(), "surf_label", min_n=100))
+      .bar_taux(.taux_var(filtered(), "surf_label", min_n=max(5, round(nrow(filtered())*0.01))))
     })
 
     # ── Route x Gravite (empile 100%) ─────────────────────────────────────────
@@ -328,14 +347,15 @@ server_facteurs <- function(id, app_data) {
         mutate(route=as.character(catr_label), grav=as.character(gravite_accident)) |>
         group_by(route, grav) |> summarise(n=n(), .groups="drop") |>
         group_by(route) |> mutate(pct=round(n/sum(n)*100,1), total=sum(n)) |>
-        ungroup() |> filter(total >= 200)
+        ungroup() |> filter(total >= max(10, round(nrow(filtered())*0.005)))
 
       ordre <- d |> filter(grav=="Mortel") |> arrange(pct) |> pull(route)
 
       grav_ordre <- c("Léger","Grave","Mortel")
       grav_present <- grav_ordre[grav_ordre %in% unique(d$grav)]
-      if (length(grav_present) == 0) return(plot_ly() |> layout(title="Aucune donnee"))
+      if (length(grav_present) == 0 || nrow(d) == 0) return(plot_ly() |> layout(title="Données insuffisantes"))
       dd1 <- d |> dplyr::filter(grav==grav_present[1])
+      if (nrow(dd1) == 0) return(plot_ly() |> layout(title="Données insuffisantes"))
       p <- plot_ly(data=dd1, x=~pct, y=~route, type="bar", orientation="h",
                    name=grav_present[1], marker=list(color=.COULEURS[grav_present[1]]),
                    text=~ifelse(pct>4, paste0(pct,"%"), ""), textposition="inside")
@@ -369,14 +389,15 @@ server_facteurs <- function(id, app_data) {
         mutate(col = gsub("Trois v\u00e9hicules et plus - ", "3+ veh. - ", col)) |>
         group_by(col, grav) |> summarise(n=n(), .groups="drop") |>
         group_by(col) |> mutate(pct=round(n/sum(n)*100,1), total=sum(n)) |>
-        ungroup() |> filter(total >= 200)
+        ungroup() |> filter(total >= max(10, round(nrow(filtered())*0.005)))
 
       ordre <- d |> filter(grav=="Mortel") |> arrange(pct) |> pull(col)
 
       grav_ordre <- c("Léger","Grave","Mortel")
       grav_present <- grav_ordre[grav_ordre %in% unique(d$grav)]
-      if (length(grav_present) == 0) return(plot_ly() |> layout(title="Aucune donnee"))
+      if (length(grav_present) == 0 || nrow(d) == 0) return(plot_ly() |> layout(title="Données insuffisantes"))
       dd1 <- d |> dplyr::filter(grav==grav_present[1])
+      if (nrow(dd1) == 0) return(plot_ly() |> layout(title="Données insuffisantes"))
       p <- plot_ly(data=dd1, x=~pct, y=~col, type="bar", orientation="h",
                    name=grav_present[1], marker=list(color=.COULEURS[grav_present[1]]),
                    text=~ifelse(pct>4, paste0(pct,"%"), ""), textposition="inside")
@@ -411,7 +432,7 @@ server_facteurs <- function(id, app_data) {
         group_by(surf, nuit) |>
         summarise(n=n(), taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,2),
                   .groups="drop") |>
-        filter(n >= 100)
+        filter(n >= max(5, round(nrow(filtered())*0.005)))
 
       surfs <- d |> group_by(surf) |>
         summarise(taux_moy=mean(taux)) |>
@@ -444,7 +465,7 @@ server_facteurs <- function(id, app_data) {
                as.character(atm_label) != "Non renseign\u00e9") |>
         mutate(m=as.character(atm_label)) |>
         group_by(m) |> summarise(n=n(), .groups="drop") |>
-        filter(n >= 500) |> arrange(desc(n)) |>
+        filter(n >= max(5, round(nrow(filtered())*0.005))) |> arrange(desc(n)) |>
         slice_head(n=5) |> pull(m)
 
       top_route <- filtered() |>
@@ -452,7 +473,7 @@ server_facteurs <- function(id, app_data) {
                as.character(catr_label) != "Non renseign\u00e9") |>
         mutate(r=as.character(catr_label)) |>
         group_by(r) |> summarise(n=n(), .groups="drop") |>
-        filter(n >= 500) |> arrange(desc(n)) |>
+        filter(n >= max(5, round(nrow(filtered())*0.005))) |> arrange(desc(n)) |>
         slice_head(n=5) |> pull(r)
 
       d <- filtered() |>
@@ -462,7 +483,7 @@ server_facteurs <- function(id, app_data) {
         group_by(meteo, route) |>
         summarise(n=n(), taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,2),
                   .groups="drop") |>
-        filter(n >= 100)
+        filter(n >= max(5, round(nrow(filtered())*0.005)))
 
       if (nrow(d) == 0) return(plot_ly() |> layout(title="Pas assez de donnees"))
 
