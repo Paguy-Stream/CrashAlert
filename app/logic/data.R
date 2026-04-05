@@ -14,7 +14,6 @@ box::use(
 load_data <- function(path = "data_propre") {
   list(
     accidents_dashboard = readRDS(file.path(path, "accidents_dashboard.rds")),
-    accidents_light     = readRDS(file.path(path, "accidents_light.rds")),
     dept_filters = readRDS(file.path(path, "dept_filters.rds")),
     agg_evolution   = readRDS(file.path(path, "agg_evolution.rds")),
     agg_departement = readRDS(file.path(path, "agg_departement.rds")),

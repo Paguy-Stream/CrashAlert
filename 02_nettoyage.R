@@ -130,8 +130,17 @@ if ("hrmn" %in% names(caracteristiques)) {
 if (all(c("lat", "long") %in% names(caracteristiques))) {
   caracteristiques <- caracteristiques |>
     mutate(
-      lat  = as.numeric(gsub(",", ".", as.character(lat))),
-      long = as.numeric(gsub(",", ".", as.character(long))),
+      lat  = {
+        lat_str <- as.character(lat)
+        lat_num <- as.numeric(gsub(",", ".", lat_str))
+        # Format entier 2015-2018 : 5054878 -> 50.54878
+        ifelse(!is.na(lat_num) & abs(lat_num) > 1000, lat_num / 100000, lat_num)
+      },
+      long = {
+        lon_str <- as.character(long)
+        lon_num <- as.numeric(gsub(",", ".", lon_str))
+        ifelse(!is.na(lon_num) & abs(lon_num) > 1000, lon_num / 100000, lon_num)
+      },
       # Validation plage France métropolitaine (définie dans 00_config.R)
       coords_valides = !is.na(lat) & !is.na(long) &
                        lat  >= LAT_MIN & lat  <= LAT_MAX &

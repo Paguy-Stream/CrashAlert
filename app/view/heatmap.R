@@ -164,10 +164,10 @@ server_heatmap <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
     observe({
-      annees  <- sort(unique(app_data$accidents_light$annee))
-      regions <- sort(unique(as.character(app_data$accidents_light$region)))
+      annees  <- sort(unique(app_data$accidents_dashboard$annee))
+      regions <- sort(unique(as.character(app_data$accidents_dashboard$region)))
       regions <- regions[!is.na(regions)]
-      deps    <- sort(unique(as.character(app_data$accidents_light$departement)))
+      deps    <- sort(unique(as.character(app_data$accidents_dashboard$departement)))
       deps    <- deps[!is.na(deps)]
       updateSelectInput(session, "annees",  choices=as.character(annees), selected=character(0))
       updateSelectInput(session, "regions", choices=regions,              selected=character(0))
@@ -177,7 +177,7 @@ server_heatmap <- function(id, app_data) {
     # Synchronisation région → département
     observe({
       req(length(input$regions) > 0)
-      deps_filtered <- app_data$accidents_light |>
+      deps_filtered <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(region) %in% input$regions) |>
         dplyr::pull(departement) |> as.character() |> unique() |> sort()
       updateSelectInput(session, "deps", choices=deps_filtered, selected=character(0))
@@ -186,14 +186,14 @@ server_heatmap <- function(id, app_data) {
     # Synchronisation département → région
     observe({
       req(length(input$deps) > 0)
-      regs_filtered <- app_data$accidents_light |>
+      regs_filtered <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(departement) %in% input$deps) |>
         dplyr::pull(region) |> as.character() |> unique() |> sort()
       updateSelectInput(session, "regions", choices=regs_filtered, selected=input$regions)
     })
 
     filtered <- reactive({
-      d <- app_data$accidents_light
+      d <- app_data$accidents_dashboard
       if (length(input$annees)  > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions) > 0) d <- d |> filter(as.character(region) %in% input$regions)
       if (length(input$gravite) > 0) d <- d |> filter(gravite_accident %in% input$gravite)
@@ -208,7 +208,7 @@ server_heatmap <- function(id, app_data) {
 
     # Données sans filtre gravité — pour calculer les taux réels de mortalité/gravité
     filtered_all <- reactive({
-      d <- app_data$accidents_light
+      d <- app_data$accidents_dashboard
       if (length(input$annees)  > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions) > 0) d <- d |> filter(as.character(region) %in% input$regions)
       d |> mutate(

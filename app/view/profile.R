@@ -216,10 +216,10 @@ server_profile <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
     observe({
-      annees  <- sort(unique(app_data$accidents_light$annee))
-      regions <- sort(unique(as.character(app_data$accidents_light$region)))
+      annees  <- sort(unique(app_data$accidents_dashboard$annee))
+      regions <- sort(unique(as.character(app_data$accidents_dashboard$region)))
       regions <- regions[!is.na(regions)]
-      deps    <- sort(unique(as.character(app_data$accidents_light$departement)))
+      deps    <- sort(unique(as.character(app_data$accidents_dashboard$departement)))
       deps    <- deps[!is.na(deps)]
       updateSelectInput(session, "annees",   choices=as.character(annees), selected=character(0))
       updateSelectInput(session, "regions",  choices=regions,              selected=character(0))
@@ -228,7 +228,7 @@ server_profile <- function(id, app_data) {
 
     observe({
       req(length(input$regions) > 0)
-      deps_f <- app_data$accidents_light |>
+      deps_f <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(region) %in% input$regions) |>
         dplyr::pull(departement) |> as.character() |> unique() |> sort()
       updateSelectInput(session, "deps", choices=deps_f, selected=character(0))
@@ -236,14 +236,14 @@ server_profile <- function(id, app_data) {
 
     observe({
       req(length(input$deps) > 0)
-      regs_f <- app_data$accidents_light |>
+      regs_f <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(departement) %in% input$deps) |>
         dplyr::pull(region) |> as.character() |> unique() |> sort()
       updateSelectInput(session, "regions", choices=regs_f, selected=input$regions)
     })
 
     filtered <- reactive({
-      d <- app_data$accidents_light
+      d <- app_data$accidents_dashboard
       if (length(input$annees)  > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions) > 0) d <- d |> filter(as.character(region) %in% input$regions)
       if (length(input$deps)    > 0) d <- d |> filter(as.character(departement) %in% input$deps)
@@ -253,7 +253,7 @@ server_profile <- function(id, app_data) {
 
     # Sans filtre gravité — pour calculer les taux contextuels (mortalité/gravité réels)
     filtered_all <- reactive({
-      d <- app_data$accidents_light
+      d <- app_data$accidents_dashboard
       if (length(input$annees)  > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions) > 0) d <- d |> filter(as.character(region) %in% input$regions)
       if (length(input$deps)    > 0) d <- d |> filter(as.character(departement) %in% input$deps)
@@ -658,7 +658,7 @@ server_profile <- function(id, app_data) {
     observeEvent(plotly::event_data("plotly_click", source="catu_pie"), ignoreInit=TRUE, {
       ev <- plotly::event_data("plotly_click", source="catu_pie")
       req(!is.null(ev))
-      catu_levels <- app_data$accidents_light |> dplyr::filter(!is.na(catu_principal)) |> dplyr::count(catu_principal, sort=TRUE) |> dplyr::pull(catu_principal) |> as.character()
+      catu_levels <- app_data$accidents_dashboard |> dplyr::filter(!is.na(catu_principal)) |> dplyr::count(catu_principal, sort=TRUE) |> dplyr::pull(catu_principal) |> as.character()
       key_val <- catu_levels[ev$pointNumber[1] + 1]; panel_trigger(list(source="catu_pie", key=as.character(key_val)))
       session$sendCustomMessage("openPanel", list(id="profile-side-panel"))
     })

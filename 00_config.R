@@ -85,10 +85,10 @@ COLONNES_DASHBOARD <- c(
   "lat", "long", "coords_valides",
   "lum_label", "atm_label", "col_label", "catr_label", "surf_label",
   "gravite_accident", "nb_victimes", "nb_tues", "nb_blesses_hospitalises",
-  "age_moyen_reel", "moment_journee", "type_route", "categorie_vehicule"
+  "age_moyen_reel", "moment_journee", "categorie_vehicule",
+  "sexe_dominant", "tranche_age", "jour_semaine", "saison",
+  "catu_principal", "secu_principal"
 )
-
-# Colonnes supplémentaires dans accidents_light.rds (analyses approfondies)
 COLONNES_LIGHT_EXTRA <- c(
   "sexe_dominant", "tranche_age", "jour_semaine", "saison",
   "catu_principal", "secu_principal"

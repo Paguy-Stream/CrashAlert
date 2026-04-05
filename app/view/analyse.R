@@ -973,7 +973,7 @@ server_analyse <- function(id, app_data) {
     output$data_summary <- renderUI({
       f <- features()
       tagList(bs_icon("database"), " ",
-              tags$strong(format(nrow(app_data$accidents_light), big.mark="\u00a0")),
+              tags$strong(format(nrow(app_data$accidents_dashboard), big.mark="\u00a0")),
               " accidents | ",
               tags$strong(nrow(f)), " departements")
     })
@@ -1227,7 +1227,7 @@ server_analyse <- function(id, app_data) {
 
     # Peupler le sélecteur région
     observe({
-      regions <- app_data$accidents_light |>
+      regions <- app_data$accidents_dashboard |>
         filter(!is.na(region)) |>
         distinct(region) |>
         arrange(region) |>
@@ -1394,7 +1394,7 @@ server_analyse <- function(id, app_data) {
         tags$p(style="margin:10px 0 0;font-size:12px;color:#7f8c8d;",
           bs_icon("info-circle"),
           " Ces chiffres sont calculés directement depuis les ",
-          format(nrow(app_data$accidents_light), big.mark="\u00a0"),
+          format(nrow(app_data$accidents_dashboard), big.mark="\u00a0"),
           " accidents de la base BAAC 2015-2024. Ils se mettent à jour",
           " automatiquement si la base de données est actualisée."
         )

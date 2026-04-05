@@ -177,12 +177,12 @@ server_facteurs <- function(id, app_data) {
   moduleServer(id, function(input, output, session) {
 
     observe({
-      annees  <- sort(unique(app_data$accidents_light$annee))
-      regions <- sort(unique(as.character(app_data$accidents_light$region)))
+      annees  <- sort(unique(app_data$accidents_dashboard$annee))
+      regions <- sort(unique(as.character(app_data$accidents_dashboard$region)))
       regions <- regions[!is.na(regions)]
-      routes  <- sort(unique(as.character(app_data$accidents_light$catr_label)))
+      routes  <- sort(unique(as.character(app_data$accidents_dashboard$catr_label)))
       routes  <- routes[!routes %in% c("Non renseigné","")]
-      deps    <- sort(unique(as.character(app_data$accidents_light$departement)))
+      deps    <- sort(unique(as.character(app_data$accidents_dashboard$departement)))
       deps    <- deps[!is.na(deps)]
       updateSelectInput(session, "annees",     choices=as.character(annees), selected=character(0))
       updateSelectInput(session, "regions",    choices=regions,              selected=character(0))
@@ -192,7 +192,7 @@ server_facteurs <- function(id, app_data) {
 
     observe({
       req(length(input$regions) > 0)
-      deps_f <- app_data$accidents_light |>
+      deps_f <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(region) %in% input$regions) |>
         dplyr::pull(departement) |> as.character() |> unique() |> sort()
       updateSelectInput(session, "deps", choices=deps_f, selected=character(0))
@@ -200,14 +200,14 @@ server_facteurs <- function(id, app_data) {
 
     observe({
       req(length(input$deps) > 0)
-      regs_f <- app_data$accidents_light |>
+      regs_f <- app_data$accidents_dashboard |>
         dplyr::filter(as.character(departement) %in% input$deps) |>
         dplyr::pull(region) |> as.character() |> unique() |> sort()
       updateSelectInput(session, "regions", choices=regs_f, selected=input$regions)
     })
 
     filtered <- reactive({
-      d <- app_data$accidents_light
+      d <- app_data$accidents_dashboard
       if (length(input$annees)     > 0) d <- d |> filter(annee %in% as.numeric(input$annees))
       if (length(input$regions)    > 0) d <- d |> filter(as.character(region) %in% input$regions)
       if (length(input$type_route) > 0) d <- d |> filter(as.character(catr_label) %in% input$type_route)
