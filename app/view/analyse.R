@@ -1135,48 +1135,7 @@ server_analyse <- function(id, app_data) {
     })
 
     # ── ACM ───────────────────────────────────────────────────────────────────
-    acm_result <- reactive({
-      set.seed(123)
-      d <- app_data$accidents_light |>
-        filter(!is.na(tranche_age), !is.na(sexe_dominant),
-               !is.na(categorie_vehicule), !is.na(atm_label),
-               !is.na(lum_label), !is.na(catr_label),
-               !is.na(gravite_accident)) |>
-        mutate(
-          age    = as.character(tranche_age),
-          sexe   = as.character(sexe_dominant),
-          vehic  = as.character(categorie_vehicule),
-          meteo  = ifelse(as.character(atm_label)=="Normale","Normale","Perturbee"),
-          lumin  = case_when(
-            grepl("Plein jour", as.character(lum_label)) ~ "Jour",
-            grepl("Nuit sans", as.character(lum_label))  ~ "Nuit sans eclairage",
-            TRUE ~ "Nuit avec eclairage"
-          ),
-          route  = case_when(
-            as.character(catr_label) %in% c("Voie communale","Routes de m\u00e9tropole urbaine") ~ "Urbaine",
-            as.character(catr_label) == "Route d\u00e9partementale" ~ "D\u00e9partementale",
-            as.character(catr_label) == "Route nationale" ~ "Nationale",
-            as.character(catr_label) == "Autoroute" ~ "Autoroute",
-            TRUE ~ "Autre"
-          ),
-          gravite = as.character(gravite_accident)
-        ) |>
-        filter(age != "Non renseign\u00e9",
-               vehic != "Non renseign\u00e9",
-               vehic != "Autre") |>
-        select(age, sexe, vehic, meteo, lumin, route, gravite)
-
-      # Échantillon stratifié 20000
-      n_sample <- min(20000, nrow(d))
-      d_sample <- d[sample(nrow(d), n_sample), ]
-
-      # ACM (gravite en variable supplémentaire)
-      d_acm <- d_sample |> select(age, sexe, vehic, meteo, lumin, route)
-      d_sup <- d_sample |> select(gravite)
-
-      res <- MCA(d_acm, quali.sup=NULL, graph=FALSE, ncp=5)
-      list(res=res, d_sup=d_sup, d_sample=d_sample)
-    })
+    acm_result <- reactive({ app_data$acm_result })
 
     output$acm_biplot <- renderPlotly({
       acm <- acm_result()

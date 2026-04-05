@@ -112,8 +112,11 @@ profil_usager <- usagers |>
       TRUE                             ~ "Autre"
     ),
     # Équipement de sécurité principal
+    # 2015-2018 : colonne `secu` unique | 2019+ : colonnes `secu1`, `secu2`, `secu3`
     secu_principal = .mode_val(as.character(
-      if ("secu1" %in% names(usagers)) as.numeric(secu1) else NA_real_
+      if ("secu1" %in% names(usagers)) as.numeric(secu1)
+      else if ("secu" %in% names(usagers)) as.numeric(secu)
+      else NA_real_
     )),
     .groups = "drop"
   )
