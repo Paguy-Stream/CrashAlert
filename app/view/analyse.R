@@ -1083,7 +1083,7 @@ server_analyse <- function(id, app_data) {
         layout(xaxis=list(title=""),
                yaxis=list(title="% variance"),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=5,b=5))
+               margin=list(t=25,b=5))
     })
 
     # ── Synthèse ──────────────────────────────────────────────────────────────

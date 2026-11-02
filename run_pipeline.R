@@ -59,6 +59,7 @@ cat(sprintf("Log            : %s\n\n", LOG_FILE))
 .chrono("03_fusion",        "03_fusion.R")
 .chrono("04_enrichissement","04_enrichissement.R")
 .chrono("05_export",        "05_export.R")
+.chrono("06_finalisation",  "06_finalisation.R")
 
 
 # ------------------------------------------------------------------------------
@@ -75,7 +76,7 @@ cat(sprintf("  Log complet     : %s\n", LOG_FILE))
 cat(sprintf("  Fichiers Shiny  : %s\n", CHEMIN_SHINY))
 cat("\n  Fichiers produits :\n")
 cat("    accidents_dashboard.rds\n")
-cat("    accidents_light.rds\n")
+cat("    agg_*.rds, dept_filters.rds, features_clustering.rds\n")
 cat("    filters.rds\n")
 cat(strrep("=", 70), "\n\n")
 
