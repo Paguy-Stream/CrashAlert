@@ -170,6 +170,14 @@ ui_dashboard <- function(id) {
       tags$div(class="mt-2"),
       layout_columns(
         col_widths=c(3,3,3,3), fill=FALSE,
+        value_box("Personnes tuées",
+          textOutput(ns("kpi_tues"), inline=TRUE),
+          showcase=bs_icon("person-fill-x"), theme="dark",
+          p(class="mb-0", style="font-size:11px;", "victimes décédées (comparable ONISR)"))
+      ),
+      tags$div(class="mt-2"),
+      layout_columns(
+        col_widths=c(3,3,3,3), fill=FALSE,
         div(class="kpi2",
           value_box("Taux de mortalité",
             textOutput(ns("kpi_taux"), inline=TRUE),
@@ -384,12 +392,13 @@ server_dashboard <- function(id, app_data, app_filters) {
     output$kpi_total  <- renderText(format(kpis()$total,  big.mark="\u00a0"))
     output$kpi_morts  <- renderText(format(kpis()$morts,  big.mark="\u00a0"))
     output$kpi_graves <- renderText(format(kpis()$graves, big.mark="\u00a0"))
+    output$kpi_tues   <- renderText(format(sum(filtered()$nb_tues, na.rm=TRUE), big.mark="\u00a0"))
     output$kpi_legers <- renderText(format(kpis()$legers, big.mark="\u00a0"))
 
     output$kpi_taux <- renderText({
       d <- filtered()
       pct <- round(mean(d$gravite_accident == "Mortel", na.rm=TRUE)*100, 1)
-      paste0(pct, " %")
+      paste0(sprintf("%.1f", pct), " %")
     })
     output$kpi_nuit <- renderText({
       d <- filtered()
@@ -415,7 +424,7 @@ server_dashboard <- function(id, app_data, app_filters) {
       if (nrow(d_geo)>5000) d_geo <- slice_sample(d_geo, n=5000)
       base <- leaflet() |> addProviderTiles(providers$Esri.WorldGrayCanvas) |>
               setView(2.2137, 46.2276, zoom=6)
-      if (nrow(d_geo)==0) return(base)
+      if (nrow(d_geo)==0) return(base |> leaflet::addControl(html="<b>Aucun point géolocalisé pour cette sélection</b><br>Coordonnées non fournies pour l’outre-mer", position="topright"))
       d_geo <- d_geo |> mutate(
         lum_label=as.character(lum_label), atm_label=as.character(atm_label),
         catr_label=as.character(catr_label),
