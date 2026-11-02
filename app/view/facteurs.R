@@ -250,7 +250,7 @@ server_facteurs <- function(id, app_data) {
       sprintf("#%02X%02X%02X", pmin(r,255), pmin(g,255), pmin(b,255))
     }
     output$data_summary <- renderUI({
-      tagList(bs_icon("database"), " ", tags$strong(format(nrow(filtered()), big.mark="u00a0")), " accidents", if(nrow(filtered()) < 30) tags$span(style="margin-left:8px;color:#e74c3c;font-size:11px;font-weight:600;", bs_icon("exclamation-triangle"), " Donnu00e9es insuffisantes"))
+      tagList(bs_icon("database"), " ", tags$strong(format(nrow(filtered()), big.mark=" ")), " accidents", if(nrow(filtered()) < 30) tags$span(style="margin-left:8px;color:#e74c3c;font-size:11px;font-weight:600;", bs_icon("exclamation-triangle"), " Données insuffisantes"))
     })
 
     # ── KPI ──────────────────────────────────────────────────────────────────

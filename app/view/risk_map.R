@@ -60,7 +60,7 @@ box::use(
         taux_mortalite >=  2 ~ "Moyenne",
         TRUE                 ~ "Faible"
       ),
-      indice_surmortalite = round(taux_mortalite / 5.66 * 100, 1)
+      indice_surmortalite = round(taux_mortalite / (sum(nb_mortels) / sum(nb_accidents) * 100) * 100, 1)
     )
 }
 
@@ -279,7 +279,7 @@ server_risk_map <- function(id, app_data) {
           taux_mortalite >=  2 ~ "Moyenne",
           TRUE                 ~ "Faible"
         ),
-        indice_surmortalite = round(taux_mortalite / 5.66 * 100, 1)
+        indice_surmortalite = round(taux_mortalite / (sum(nb_mortels) / sum(nb_accidents) * 100) * 100, 1)
       )
     })
 
@@ -411,7 +411,7 @@ server_risk_map <- function(id, app_data) {
       )
 
       leaflet(geo) |>
-        addProviderTiles(providers$CartoDB.Positron) |>
+        addProviderTiles(providers$Esri.WorldGrayCanvas) |>
         setView(2.2137, 46.5, zoom = 6) |>
         addFullscreenControl() |>
         addPolygons(

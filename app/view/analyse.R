@@ -32,12 +32,12 @@ box::use(
 # Noms clusters — basés sur profils empiriques (k=3, seed=42)
 # Validation : silhouette k=2=0.359 (optimal), k=3=0.261 (retenu), k=4=0.259 (marginal)
 # k=3 → k=4 fragmente le rural sans gain interprétable (Δsilhouette=-0.002)
-# Cluster 1 (39 depts) : mortalité 11.6%, route dept 63.0% → Rural à haut risque
-# Cluster 2 (42 depts) : mortalité 7.8%, mixte            → Rural intermédiaire
-# Cluster 3 (15 depts) : mortalité 3.8%, urbain           → Urbain métropolitain
+# Cluster 1 (17 depts) : mortalité 10.7%, route dept 63.0% → Rural, routes départementales
+# Cluster 2 (45 depts) : mortalité 10.4%, mixte            → Mixte périurbain et rural
+# Cluster 3 (34 depts) : mortalité 5.3%, urbain           → Urbain métropolitain
 .CLUSTER_NOMS <- c(
-  "1" = "Rural \u00e0 haut risque",
-  "2" = "Rural interm\u00e9diaire",
+  "1" = "Rural, routes départementales",
+  "2" = "Mixte périurbain et rural",
   "3" = "Urbain m\u00e9tropolitain"
 )
 .CLUSTER_COULEURS <- c(
@@ -85,7 +85,9 @@ box::use(
   mat <- base::scale(as.matrix(df_mat))
   set.seed(42)
   km <- stats::kmeans(mat, centers=3, nstart=25, iter.max=100)
-  features$cluster <- as.character(km$cluster)
+  # 1 = mortalité la plus élevée, 3 = la plus basse (km$cluster est arbitraire)
+  ordre <- order(tapply(features$taux_mortalite, km$cluster, mean), decreasing = TRUE)
+  features$cluster <- as.character(match(km$cluster, ordre))
   features$cluster_nom <- .CLUSTER_NOMS[features$cluster]
 
   # Score risque composite révisé (0-100)
@@ -160,7 +162,7 @@ ui_analyse <- function(id) {
     div(class = "ana-topbar",
       div(style="display:flex;align-items:center;gap:16px;",
         div(style="font-weight:700;color:#1b3a6b;font-size:14px;",
-            bs_icon("graph-up-arrow"), " Statistiques approfondies — France metropolitaine 2015-2024"),
+            bs_icon("graph-up-arrow"), " Statistiques approfondies — France metropolitaine 2015-2025"),
         div(style="color:#6c757d;font-size:12px;",
             bs_icon("info-circle"),
             " Clustering k-means | Score de risque composite | ACM")
@@ -246,7 +248,7 @@ ui_analyse <- function(id) {
         "forte proportion d\u2019accidents sans tiers (sorties de route), population vieillissante.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("info-circle"),
-          " Les scores exacts varient selon les ann\u00e9es s\u00e9lectionn\u00e9es. L\u2019analyse porte sur 2015-2024 globalement. ",
+          " Les scores exacts varient selon les ann\u00e9es s\u00e9lectionn\u00e9es. L\u2019analyse porte sur 2015-2025 globalement. ",
           "Les valeurs affich\u00e9es dans le Top 15 sont \u00e0 lire comme des ordres de grandeur relatifs, pas des indicateurs absolus.")
       ),
 
@@ -261,7 +263,7 @@ ui_analyse <- function(id) {
         "K-means (k=3, nstart=25, seed=42) sur 6 variables normalis\u00e9es : ",
         "taux mortalit\u00e9, % nuit, % route d\u00e9partementale, % jeunes, % accidents sans tiers, % weekend. ",
         "Validation sur 50 seeds : configuration identique \u00e0 chaque fois (structure stable). ",
-        "Silhouette k=3 = 0.261 (k=2 optimal \u00e0 0.359, k=4 = 0.259, gain marginal de 0.002). ",
+        "Silhouette k=3 = 0.278 (k=2 optimal \u00e0 0.359, k=4 = 0.253). ",
         tags$b("96 d\u00e9partements"), " m\u00e9tropolitains class\u00e9s en 3 profils distincts.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("info-circle"),
@@ -292,14 +294,14 @@ ui_analyse <- function(id) {
 
       div(class="resultat-box",
         tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
-        tags$b("\ud83d\udd34 Rural \u00e0 haut risque"), " (39 d\u00e9pts) : ",
-        "taux de mortalit\u00e9 moyen de ", tags$b("11.6%"), ", route d\u00e9partementale 63%. ",
+        tags$b("\ud83d\udd34 Rural, routes départementales"), " (17 d\u00e9pts) : ",
+        "taux de mortalit\u00e9 moyen de ", tags$b("10.7%"), ", route d\u00e9partementale 64%. ",
         "Ce cluster regroupe la France rurale profonde : Massif Central, Sud-Ouest, Est.", tags$br(),
-        tags$b("\ud83d\udfe1 Rural interm\u00e9diaire"), " (42 d\u00e9pts) : ",
-        "mortalit\u00e9 7.8%, m\u00e9lange de d\u00e9partements p\u00e9riurbains et ruraux moins isol\u00e9s. ",
+        tags$b("\ud83d\udfe1 Mixte périurbain et rural"), " (45 d\u00e9pts) : ",
+        "mortalit\u00e9 10.4%, m\u00e9lange de d\u00e9partements p\u00e9riurbains et ruraux moins isol\u00e9s. ",
         "Ce cluster couvre la majorit\u00e9 de la France de province.", tags$br(),
-        tags$b("\ud83d\udfe2 Urbain m\u00e9tropolitain"), " (15 d\u00e9pts\u00a0: Paris, IDF, Lyon, Bordeaux, Strasbourg...) : ",
-        "mortalit\u00e9 ", tags$b("3.8%"), ", le plus bas. ",
+        tags$b("\ud83d\udfe2 Urbain m\u00e9tropolitain"), " (34 d\u00e9pts\u00a0: Paris, IDF, Lyon, Bordeaux, Strasbourg...) : ",
+        "mortalit\u00e9 ", tags$b("5.3%"), ", le plus bas. ",
         "Paris (75) affiche 0.7%, soit ", tags$b("16 fois moins"), " que les d\u00e9partements ruraux les plus expos\u00e9s.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("info-circle"),
@@ -325,9 +327,9 @@ ui_analyse <- function(id) {
 
       div(class="methodo-box", style="margin-bottom:16px;",
         tags$b(bs_icon("graph-up"), " Methodologie :"), tags$br(),
-        "ACM sur \u00e9chantillon stratifi\u00e9 (20 000 accidents). Variables actives : ",
+        "ACM sur échantillon aléatoire de 20 000 accidents métropolitains. Variables actives : ",
         tags$b("tranche d\u2019\u00e2ge, sexe, cat\u00e9gorie v\u00e9hicule, m\u00e9t\u00e9o, luminosit\u00e9, type de route."),
-        " Variable illustrative : gravit\u00e9. ",
+        " La gravité n'est pas une variable de l'ACM. ",
         "Les modalit\u00e9s proches sur le biplot sont statistiquement associ\u00e9es."
       ),
 
@@ -363,36 +365,33 @@ ui_analyse <- function(id) {
         "plus ce profil est ", tags$b("atypique"), ", c\u2019est-\u00e0-dire tr\u00e8s diff\u00e9rent du profil moyen. ",
         "Les points au centre (V\u00e9hicule l\u00e9ger, Route d\u00e9partementale, Homme) repr\u00e9sentent ",
         tags$b("l\u2019accident banal et fr\u00e9quent."), tags$br(),
-        "Chaque axe explique environ 6-7% de la variabilit\u00e9 totale. C\u2019est attendu en ACM : ",
+        "Chaque axe explique environ 6% de la variabilit\u00e9 totale. C\u2019est attendu en ACM : ",
         "la r\u00e9alit\u00e9 est multidimensionnelle. ",
         tags$b("L\u2019ACM d\u00e9crit des profils, pas des niveaux de gravit\u00e9.")
       ),
 
       div(class="resultat-box",
         tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
-        tags$b("Axe 1 (horizontal) — Milieu rural rapide vs milieu urbain."),
-        " Les deux modalit\u00e9s qui structurent le plus cet axe sont ",
-        tags$b("Nuit sans \u00e9clairage (18.5%) et Autoroute (18.1%)"),
-        " \u00e0 droite, oppos\u00e9es \u00e0 ",
-        tags$b("Urbaine (12.3%)"), " \u00e0 gauche. ",
-        "En pratique : les accidents en milieu rural nocturne et les accidents urbains ",
-        "correspondent \u00e0 des contextes structurellement diff\u00e9rents.", tags$br(), tags$br(),
-        tags$b("Axe 2 (vertical) — Nuit p\u00e9riurbaine/jeunes vs jour/seniors."),
-        " Cet axe est structur\u00e9 par ",
-        tags$b("Nuit avec \u00e9clairage (20.5%), 18-24 ans (13.5%) et m\u00e9t\u00e9o perturb\u00e9e (10.4%)"),
-        " en bas, oppos\u00e9s \u00e0 ",
-        tags$b("Plein jour (12.1%)"), " et les classes d\u2019\u00e2ge senior en haut.", tags$br(), tags$br(),
+        tags$b("Axe 1 (horizontal) : hors agglomération rapide vs milieu urbain."),
+        " Les modalités qui contribuent le plus à cet axe sont ",
+        tags$b("Nuit sans éclairage (21,8 %), Autoroute (17,6 %) et Poids lourd (9,5 %)"),
+        " à droite, opposées à ",
+        tags$b("Urbaine (15,3 %) et Cyclomoteur (8,3 %)"), " à gauche. ",
+        "Ce sont des contextes structurellement différents : routes rapides et non éclairées d'un côté, voirie urbaine et deux-roues légers de l'autre.",
+        tags$br(), tags$br(),
+        tags$b("Axe 2 (vertical) : seniors et femmes vs jeunes et hommes."),
+        " Cet axe est structuré par ",
+        tags$b("65 ans et plus (17,3 %) et Féminin (14,7 %)"),
+        " en haut, opposés à ",
+        tags$b("Masculin (9,9 %), Nuit avec éclairage (9,3 %), Cyclomoteur (6,7 %) et 18-24 ans (5,0 %)"),
+        " en bas.",
+        tags$br(), tags$br(),
         tags$b("Points notables :"), tags$br(),
-        "\u2022 ", tags$b("Tracteur agricole"), " (Dim1 = 2.34) est la modalit\u00e9 la plus \u00e9loign\u00e9e du centre sur l\u2019axe 1. ",
-        "Il partage avec Nuit sans \u00e9clairage (Dim1 = 1.73) une position \u00e0 droite sur cet axe, ",
-        "mais ils sont oppos\u00e9s sur l\u2019axe 2 (Tracteur : +0.54, Nuit sans \u00e9clairage : -0.92) ; ",
-        "leur association n\u2019est donc que partielle. ",
-        tags$em("L\u2019ACM ne permet pas de conclure qu\u2019il est plus mortel. Pour la mortalit\u00e9 par type de v\u00e9hicule, voir l\u2019onglet Facteurs de risque."), tags$br(),
-        "\u2022 ", tags$b("V\u00e9lo et Cyclomoteur sont oppos\u00e9s sur l\u2019axe vertical"),
-        " : le v\u00e9lo est plut\u00f4t diurne et associ\u00e9 aux seniors (haut), ",
-        "le cyclomoteur est nocturne et jeune (bas) : deux univers distincts.", tags$br(),
-        "\u2022 ", tags$b("Poids lourd"), " se situe en haut (Dim2 = 1.16), proche du profil diurne/seniors : ",
-        "les collisions avec poids lourds arrivent surtout de jour, sur grands axes.",
+        "• ", tags$b("Poids lourd"), " est la modalité la plus à droite (Dim1 = 1,92), proche de Nuit sans éclairage et d'Autoroute : ces contextes sont souvent associés dans l'échantillon. ",
+        tags$em("L'ACM ne dit rien de leur mortalité ; voir l'onglet Facteurs de risque."), tags$br(),
+        "• ", tags$b("Vélo et Cyclomoteur sont opposés sur l'axe vertical"),
+        " : le vélo (Dim2 = 1,51) est associé aux seniors, le cyclomoteur (Dim2 = -0,91) aux plus jeunes.", tags$br(),
+        "• ", tags$b("Les EDP motorisés"), " (Dim1 = -1,61) et le vélo à assistance électrique (Dim1 = -1,50) sont parmi les profils les plus à gauche, c'est-à-dire les plus urbains.",
         tags$br(), tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("info-circle"),
@@ -404,7 +403,7 @@ ui_analyse <- function(id) {
       tags$div(class="mt-3"),
 
       # ── Section 4 : Évolution temporelle ──────────────────────────────────────
-      div(class="section-title", bs_icon("graph-up"), " \u00c9volution temporelle — Mortalit\u00e9 2015-2024"),
+      div(class="section-title", bs_icon("graph-up"), " \u00c9volution temporelle — Mortalit\u00e9 2015-2025"),
 
       div(class="methodo-box", style="margin-bottom:16px;",
         tags$b(bs_icon("info-circle"), " Lecture :"), tags$br(),
@@ -413,7 +412,7 @@ ui_analyse <- function(id) {
         tags$b("2020 : ann\u00e9e COVID"), " — baisse du trafic, taux non comparable aux autres ann\u00e9es.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("exclamation-triangle"),
-          " Les tendances (badges) ne sont affich\u00e9es que si R\u00b2 \u2265 0.4 sur la r\u00e9gression lin\u00e9aire 2015-2024. ",
+          " Les tendances (badges) ne sont affich\u00e9es que si R\u00b2 \u2265 0.4 sur la r\u00e9gression lin\u00e9aire 2015-2025. ",
           "Un R\u00b2 inf\u00e9rieur indique une \u00e9volution irr\u00e9guli\u00e8re, non qualifiable comme tendance.")
       ),
 
@@ -467,7 +466,7 @@ ui_analyse <- function(id) {
       div(class="methodo-box", style="margin-bottom:16px;",
         tags$b(bs_icon("info-circle"), " Lecture :"), tags$br(),
         "Chaque point est un d\u00e9partement. L\u2019axe X repr\u00e9sente le score composite de risque (0-100), ",
-        "l\u2019axe Y la pente de r\u00e9gression lin\u00e9aire du taux de mortalit\u00e9 sur 2015-2024 (pt/an). ",
+        "l\u2019axe Y la pente de r\u00e9gression lin\u00e9aire du taux de mortalit\u00e9 sur 2015-2025 (pt/an). ",
         "Une pente n\u00e9gative indique une am\u00e9lioration, positive une d\u00e9gradation. ",
         "La taille du point est proportionnelle \u00e0 l\u2019amplitude (max-min) sur 10 ans.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
@@ -684,7 +683,7 @@ server_analyse <- function(id, app_data) {
       )
 
       tagList(
-        tags$p(tags$b("Tendances 2015-2024 :"),
+        tags$p(tags$b("Tendances 2015-2025 :"),
                style="margin:0 0 6px;font-size:12px;"),
         lapply(seq_len(nrow(td)), function(i) {
           r <- td[i,]
@@ -721,6 +720,7 @@ server_analyse <- function(id, app_data) {
       # Tendance nationale (fixe)
       mort_debut_fr <- round(mean(ef$taux_mort[ef$annee <= 2016]), 2)
       mort_fin_fr   <- round(mean(ef$taux_mort[ef$annee >= 2023]), 2)
+      r2_fr         <- round(summary(lm(taux_mort ~ annee, data = ef))$r.squared, 2)
 
       # Construire les phrases sur les depts sélectionnés
       phrases_amelio <- td |>
@@ -753,8 +753,8 @@ server_analyse <- function(id, app_data) {
         tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
         "Tendance nationale : ",
         tags$b(paste0(mort_debut_fr, "%")), " (2015-2016) ",
-        "\u2192 ", tags$b(paste0(mort_fin_fr, "%")), " (2023-2024). ",
-        "La progression n\u2019est pas lin\u00e9aire (R\u00b2=0.15) : creux en 2020-2021, remontée ensuite.",
+        "\u2192 ", tags$b(paste0(mort_fin_fr, "%")), " (2023-2025). ",
+        "La progression n\u2019est pas lin\u00e9aire (R\u00b2=", r2_fr, ") : creux en 2020-2021, remontée ensuite.",
         tags$br(), tags$br(),
 
         if (nrow(phrases_amelio) > 0) tagList(
@@ -998,7 +998,7 @@ server_analyse <- function(id, app_data) {
         domain   = vals, na.color="#e9ecef")
 
       leaflet(gm) |>
-        addProviderTiles(providers$CartoDB.Positron) |>
+        addProviderTiles(providers$Esri.WorldGrayCanvas) |>
         setView(2.2137, 46.5, zoom=6) |>
         addPolygons(
           fillColor   = ~pal(vals),
@@ -1055,7 +1055,7 @@ server_analyse <- function(id, app_data) {
         na.color= "#e9ecef")
 
       leaflet(gm) |>
-        addProviderTiles(providers$CartoDB.Positron) |>
+        addProviderTiles(providers$Esri.WorldGrayCanvas) |>
         setView(2.2137, 46.5, zoom=6) |>
         addPolygons(
           fillColor   = ~pal_cluster(cluster),
@@ -1130,7 +1130,7 @@ server_analyse <- function(id, app_data) {
         class="table table-hover table-sm") |>
         formatStyle("Cluster",
           backgroundColor = styleEqual(
-            c("Rural \u00e0 haut risque","Rural interm\u00e9diaire","Urbain m\u00e9tropolitain"),
+            c("Rural, routes départementales","Mixte périurbain et rural","Urbain m\u00e9tropolitain"),
             c("#f8d7da","#fff3cd","#d4edda")))
     })
 
@@ -1310,7 +1310,7 @@ server_analyse <- function(id, app_data) {
       top3       <- f |> arrange(desc(score_risque)) |> slice_head(n=3)
       bottom1    <- f |> arrange(score_risque) |> slice_head(n=1)
 
-      cl_rural   <- f |> filter(cluster_nom == "Rural \u00e0 haut risque")
+      cl_rural   <- f |> filter(cluster_nom == "Rural, routes départementales")
       cl_urbain  <- f |> filter(cluster_nom == "Urbain m\u00e9tropolitain")
 
       mort_rural  <- round(mean(cl_rural$taux_mortalite,  na.rm=TRUE), 1)
@@ -1340,7 +1340,7 @@ server_analyse <- function(id, app_data) {
 
           # Insight 1 : fracture urbain-rural — chiffré
           tags$li(
-            "Mortalité des accidents dans le cluster ", tags$b("Rural à haut risque"),
+            "Mortalité des accidents dans le cluster ", tags$b("Rural, routes départementales"),
             " : ", tags$b(paste0(mort_rural, "%")), ", contre ",
             tags$b(paste0(mort_urbain, "%")), " dans le cluster ",
             tags$b("Urbain métropolitain"), ". Rapport de ",
@@ -1395,7 +1395,7 @@ server_analyse <- function(id, app_data) {
           bs_icon("info-circle"),
           " Ces chiffres sont calculés directement depuis les ",
           format(nrow(app_data$accidents_dashboard), big.mark="\u00a0"),
-          " accidents de la base BAAC 2015-2024. Ils se mettent à jour",
+          " accidents de la base BAAC 2015-2025. Ils se mettent à jour",
           " automatiquement si la base de données est actualisée."
         )
       )

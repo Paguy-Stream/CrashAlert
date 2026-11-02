@@ -151,7 +151,7 @@ log_msg("Ajout des noms de département et région...")
     "70","71","72","73","74","75","76","77","78","79",
     "80","81","82","83","84","85","86","87","88","89",
     "90","91","92","93","94","95",
-    "971","972","973","974","976"
+    "971","972","973","974","975","976","977","978","986","987","988"
   ),
   departement = c(
     "Ain","Aisne","Allier","Alpes-de-Haute-Provence","Hautes-Alpes",
@@ -174,7 +174,7 @@ log_msg("Ajout des noms de département et région...")
     "Vendée","Vienne","Haute-Vienne","Vosges","Yonne",
     "Territoire de Belfort","Essonne","Hauts-de-Seine","Seine-Saint-Denis",
     "Val-de-Marne","Val-d'Oise",
-    "Guadeloupe","Martinique","Guyane","La Réunion","Mayotte"
+    "Guadeloupe","Martinique","Guyane","La Réunion","Saint-Pierre-et-Miquelon","Mayotte","Saint-Barthélemy","Saint-Martin","Wallis-et-Futuna","Polynésie française","Nouvelle-Calédonie"
   ),
   region = c(
     "Auvergne-Rhône-Alpes","Hauts-de-France","Auvergne-Rhône-Alpes",
@@ -211,7 +211,7 @@ log_msg("Ajout des noms de département et région...")
     "Grand Est","Bourgogne-Franche-Comté",
     "Bourgogne-Franche-Comté","Île-de-France","Île-de-France",
     "Île-de-France","Île-de-France","Île-de-France",
-    "Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer"
+    "Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer","Outre-mer"
   )
 )
 

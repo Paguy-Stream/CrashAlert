@@ -162,7 +162,14 @@ if (all(c("lat", "long") %in% names(caracteristiques))) {
 caracteristiques <- caracteristiques |>
   mutate(
     dep = as.character(dep),
-    dep = str_sub(dep, 1, 2),
+        dep = case_when(
+          dep %in% c("2A","2B")                  ~ dep,
+          dep == "201"                           ~ "2A",
+          dep == "202"                           ~ "2B",
+          nchar(dep) == 3 & grepl("^9[78]", dep) ~ dep,
+          nchar(dep) == 3 & grepl("0$", dep)     ~ str_sub(dep, 1, 2),
+          TRUE                                   ~ str_sub(dep, 1, 2)
+        ),
     dep = case_when(
       nchar(dep) == 1              ~ paste0("0", dep),
       dep %in% c("NA", "")        ~ NA_character_,

@@ -103,6 +103,12 @@ ui_dashboard <- function(id) {
             multiple=TRUE, width="100%")
         ),
         div(class="filter-section",
+          div(class="filter-label", "Territoire"),
+          selectInput(ns("territoire"), label=NULL,
+            choices=c("France entière", "Métropole", "Outre-mer"),
+            selected="France entière", width="100%")
+        ),
+        div(class="filter-section",
           div(class="filter-label", "Régions"),
           selectInput(ns("regions"), label=NULL, choices=NULL, multiple=TRUE, width="100%")
         ),
@@ -149,13 +155,13 @@ ui_dashboard <- function(id) {
         value_box("Total accidents",
           textOutput(ns("kpi_total"), inline=TRUE),
           showcase=bs_icon("exclamation-triangle-fill"), theme="primary"),
-        value_box("Décès",
+        value_box("Accidents mortels",
           textOutput(ns("kpi_morts"), inline=TRUE),
           showcase=bs_icon("heart-pulse-fill"), theme="danger"),
-        value_box("Blessés graves",
+        value_box("Accidents graves",
           textOutput(ns("kpi_graves"), inline=TRUE),
           showcase=bs_icon("bandaid-fill"), theme="warning"),
-        value_box("Blessés légers",
+        value_box("Accidents légers",
           textOutput(ns("kpi_legers"), inline=TRUE),
           showcase=bs_icon("activity"), theme="success")
       ),
@@ -334,6 +340,9 @@ server_dashboard <- function(id, app_data, app_filters) {
       d <- filter_accidents(app_data$accidents_dashboard,
         annees=annees_sel, regions=regions_sel, gravites=gravite_sel)
       if (!is.null(dept_sel)) d <- d |> dplyr::filter(as.character(departement) %in% dept_sel)
+      terr <- if (is.null(input$territoire)) "France entière" else input$territoire
+      if (terr == "Métropole")  d <- d |> dplyr::filter(as.character(region) != "Outre-mer")
+      if (terr == "Outre-mer")  d <- d |> dplyr::filter(as.character(region) == "Outre-mer")
       d
     }, ignoreNULL=FALSE)
 
@@ -341,6 +350,7 @@ server_dashboard <- function(id, app_data, app_filters) {
       updateSelectInput(session, "annees",   selected=character(0))
       updateSelectInput(session, "regions",  selected=character(0))
       updateSelectInput(session, "gravite",  selected=character(0))
+      updateSelectInput(session, "territoire", selected="France entière")
     })
 
     # Tags actifs
@@ -352,6 +362,8 @@ server_dashboard <- function(id, app_data, app_filters) {
           else paste0(length(input$annees)," années"))))
       if (length(input$gravite)>0 && length(input$gravite)<3)
         tl <- c(tl, list(span(class="ca-tag", paste(input$gravite,collapse=", "))))
+      if (!is.null(input$territoire) && input$territoire != "France entière")
+        tl <- c(tl, list(span(class="ca-tag", input$territoire)))
       if (length(input$regions)>0)
         tl <- c(tl, list(span(class="ca-tag",
           if(length(input$regions)==1) input$regions
@@ -401,7 +413,7 @@ server_dashboard <- function(id, app_data, app_filters) {
       d_geo <- d |> filter(!is.na(lat), !is.na(long), coords_valides==TRUE,
                             lat>=41, lat<=51, long>=-5, long<=10)
       if (nrow(d_geo)>5000) d_geo <- slice_sample(d_geo, n=5000)
-      base <- leaflet() |> addProviderTiles(providers$CartoDB.Positron) |>
+      base <- leaflet() |> addProviderTiles(providers$Esri.WorldGrayCanvas) |>
               setView(2.2137, 46.2276, zoom=6)
       if (nrow(d_geo)==0) return(base)
       d_geo <- d_geo |> mutate(
@@ -632,7 +644,9 @@ server_dashboard <- function(id, app_data, app_filters) {
     output$dl_csv <- downloadHandler(
       filename = function() {
         anns <- if (length(input$annees) > 0) paste(input$annees, collapse="-") else "tout"
-        regs <- if (length(input$regions) > 0) "filtre" else "france"
+        regs <- if (length(input$regions) > 0) "filtre" else
+                  switch(if (is.null(input$territoire)) "France entière" else input$territoire,
+                         "Métropole"="metropole", "Outre-mer"="outremer", "france")
         paste0("crashalert_dashboard_", regs, "_", anns, ".csv")
       },
       content = function(file) {
