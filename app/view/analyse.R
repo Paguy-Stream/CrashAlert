@@ -29,89 +29,18 @@ box::use(
 .DOMTOM <- c("971","972","973","974","975","976","977","978",
              "984","985","986","987","988","989")
 
-# Noms clusters — basés sur profils empiriques (k=3, seed=42)
-# Validation : silhouette k=2=0.359 (optimal), k=3=0.261 (retenu), k=4=0.259 (marginal)
-# k=3 → k=4 fragmente le rural sans gain interprétable (Δsilhouette=-0.002)
-# Cluster 1 (17 depts) : mortalité 10.7%, route dept 63.0% → Rural, routes départementales
-# Cluster 2 (45 depts) : mortalité 10.4%, mixte            → Mixte périurbain et rural
-# Cluster 3 (34 depts) : mortalité 5.3%, urbain           → Urbain métropolitain
+# Groupes issus du clustering des 4 variables structurelles (mortalité non utilisée)
+# 1 = score structurel moyen le plus élevé, 3 = le plus bas
 .CLUSTER_NOMS <- c(
-  "1" = "Rural, routes départementales",
-  "2" = "Mixte périurbain et rural",
-  "3" = "Urbain m\u00e9tropolitain"
+  "1" = "Réseau rural dominant",
+  "2" = "Réseau mixte",
+  "3" = "Réseau urbain dominant"
 )
 .CLUSTER_COULEURS <- c(
   "1" = "#e74c3c",
   "2" = "#f39c12",
   "3" = "#27ae60"
 )
-
-# Prépare features département pour clustering
-.prepare_features <- function(accidents) {
-  accidents |>
-    mutate(dep_raw = as.character(dep)) |>
-    mutate(dep_clean = case_when(
-      dep_raw == "201" ~ "2A", dep_raw == "202" ~ "2B",
-      nchar(dep_raw)==3 & grepl("0$",dep_raw) &
-        !dep_raw %in% .DOMTOM ~ sub("0$","",dep_raw),
-      nchar(dep_raw)==1 ~ paste0("0",dep_raw),
-      TRUE ~ dep_raw
-    )) |>
-    filter(!dep_clean %in% .DOMTOM) |>
-    group_by(dep_clean) |>
-    summarise(
-      departement         = first(as.character(departement)),
-      region              = first(as.character(region)),
-      taux_mortalite      = round(mean(gravite_accident=="Mortel",  na.rm=TRUE)*100, 2),
-      taux_nuit           = round(mean(grepl("Nuit", as.character(lum_label)), na.rm=TRUE)*100, 2),
-      taux_route_dept     = round(mean(as.character(catr_label)=="Route d\u00e9partementale", na.rm=TRUE)*100, 2),
-      taux_jeunes         = round(mean(as.character(tranche_age) %in% c("18-24 ans","25-34 ans"), na.rm=TRUE)*100, 2),
-      taux_sans_collision = round(mean(as.character(col_label)=="Sans collision", na.rm=TRUE)*100, 2),
-      taux_weekend        = round(mean(as.character(jour_semaine) %in% c("samedi","dimanche"), na.rm=TRUE)*100, 2),
-      nb_accidents        = n(),
-      .groups = "drop"
-    ) |>
-    filter(nb_accidents >= 100)
-}
-
-# Clustering k-means k=3
-# k=3 retenu : silhouette=0.261, profils nets et stables sur 50 seeds
-# k=4 rejeté : Δsilhouette=-0.002 vs k=3, fragmente le rural sans gain interprétable
-.run_clustering <- function(features) {
-  df_mat <- features |>
-    column_to_rownames("dep_clean") |>
-    dplyr::select(taux_mortalite, taux_nuit, taux_route_dept,
-                  taux_jeunes, taux_sans_collision, taux_weekend)
-  mat <- base::scale(as.matrix(df_mat))
-  set.seed(42)
-  km <- stats::kmeans(mat, centers=3, nstart=25, iter.max=100)
-  # 1 = mortalité la plus élevée, 3 = la plus basse (km$cluster est arbitraire)
-  ordre <- order(tapply(features$taux_mortalite, km$cluster, mean), decreasing = TRUE)
-  features$cluster <- as.character(match(km$cluster, ordre))
-  features$cluster_nom <- .CLUSTER_NOMS[features$cluster]
-
-  # Score risque composite révisé (0-100)
-  # Pondération fondée sur les corrélations empiriques avec taux_mortalite :
-  #   taux_route_dept     R²=26% → 25%
-  #   taux_sans_collision R²=20% → 20%
-  #   taux_jeunes         R²=25% → 10% (signe inversé : moins de jeunes = plus de seniors)
-  #   taux_nuit           R²=2%  →  5% (justifié par l'éloignement des secours)
-  #   Météo supprimée     R²=0.3% → non discriminante
-  features$score_risque <- round(
-    (features$taux_mortalite      / max(features$taux_mortalite)      * 40 +
-     features$taux_route_dept     / max(features$taux_route_dept)     * 25 +
-     features$taux_sans_collision / max(features$taux_sans_collision) * 20 +
-     (100 - features$taux_jeunes) / 100                               * 10 +
-     features$taux_nuit           / max(features$taux_nuit)           *  5), 1)
-
-  features$classe_risque <- case_when(
-    features$score_risque >= 65 ~ "Tr\u00e8s \u00e9lev\u00e9",
-    features$score_risque >= 45 ~ "\u00c9lev\u00e9",
-    features$score_risque >= 30 ~ "Mod\u00e9r\u00e9",
-    TRUE                        ~ "Faible"
-  )
-  features
-}
 
 #' @export
 ui_analyse <- function(id) {
@@ -165,7 +94,7 @@ ui_analyse <- function(id) {
             bs_icon("graph-up-arrow"), " Statistiques approfondies — France metropolitaine 2015-2025"),
         div(style="color:#6c757d;font-size:12px;",
             bs_icon("info-circle"),
-            " Clustering k-means | Score de risque composite | ACM")
+            " Clustering k-means | Score de risque structurel | ACM")
       ),
       div(style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;",
           uiOutput(ns("data_summary"), inline=TRUE),
@@ -195,23 +124,9 @@ ui_analyse <- function(id) {
 
       # ── Section 1 : Score de risque composite ──────────────────────────────
       div(class="section-title",
-          bs_icon("shield-fill-exclamation"), " Score de risque composite par departement"),
+          bs_icon("shield-fill-exclamation"), " Score de risque structurel par département"),
 
-      div(class="methodo-box", style="margin-bottom:16px;",
-        tags$b(bs_icon("calculator"), " Methodologie du score (v2 — fond\u00e9e sur les corr\u00e9lations empiriques) :"), tags$br(),
-        "Score 0-100 pond\u00e9r\u00e9 : ",
-        tags$b("Taux mortalit\u00e9 (40%)"), " + ",
-        tags$b("% route d\u00e9partementale (25%, R\u00b2=26%)"), " + ",
-        tags$b("% accidents sans tiers (20%, R\u00b2=20%)"), " + ",
-        tags$b("profil senior (10%, R\u00b2=25%)"), " + ",
-        tags$b("% accidents de nuit (5%)"), ".", tags$br(),
-        tags$em(style="color:#7f8c8d;font-size:12px;",
-          bs_icon("info-circle"),
-          " La m\u00e9t\u00e9o a \u00e9t\u00e9 \u00e9cart\u00e9e (R\u00b2=0.3% avec la mortalit\u00e9, non discriminante). ",
-          "Les accidents sans tiers correspondent aux sorties de route et chutes (terminologie ONISR). ",
-          "Les pond\u00e9rations refl\u00e8tent la corr\u00e9lation empirique de chaque facteur avec le taux de mortalit\u00e9 d\u00e9partemental. ",
-          "Limite connue : absence de donn\u00e9es de trafic (v\u00e9hicule-km) pour neutraliser l\u2019effet de densit\u00e9.")
-      ),
+      uiOutput(ns("methodo_score")),
 
       layout_columns(
         col_widths=c(7,5),
@@ -227,30 +142,16 @@ ui_analyse <- function(id) {
 
       div(class="lecture-box",
         tags$b(bs_icon("eye"), " Comment lire cette carte :"), tags$br(),
-        "Chaque d\u00e9partement est color\u00e9 selon son score de risque, du vert (faible) au rouge fonc\u00e9 (tr\u00e8s \u00e9lev\u00e9). ",
-        "Ce score combine ", tags$b("4 facteurs pond\u00e9r\u00e9s selon leur corr\u00e9lation r\u00e9elle avec la mortalit\u00e9"),
-        ". Les pondérations sont fondées sur les corrélations empiriques. ",
-        "Un d\u00e9partement peut avoir peu d\u2019accidents au total mais un score \u00e9lev\u00e9 ",
-        "s\u2019il cumule routes d\u00e9partementales, sorties de route fr\u00e9quentes et population \u00e2g\u00e9e. ",
-        tags$b("Survolez un d\u00e9partement"), " pour voir son score et sa classe de risque.", tags$br(),
+        "Chaque département est coloré selon son score structurel, du vert (faible) au rouge foncé (élevé). ",
+        "Il résume quatre caractéristiques des accidents du département : routes départementales, hors agglomération, nuit sans éclairage public et sorties de route. ",
+        tags$b("Survolez un département"), " pour voir son score et sa classe. ",
+        "Les classes sont des quartiles : elles indiquent une position relative, chacune regroupe environ un quart des départements.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("info-circle"),
-          " Limite : ce score ne neutralise pas l\u2019effet de densit\u00e9 de trafic (donn\u00e9es v\u00e9hicule-km non disponibles). ",
-          "Un d\u00e9partement rural avec peu de trafic peut afficher un taux de mortalit\u00e9 \u00e9lev\u00e9 m\u00e9caniquement.")
+          " Limite : sans données de trafic (véhicule-km), les parts décrivent la composition des accidents et non celle du réseau routier.")
       ),
 
-      div(class="resultat-box",
-        tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
-        "Les d\u00e9partements les plus \u00e0 risque ne sont ", tags$b("pas les plus peupl\u00e9s"),
-        ". Paris, Lyon et Marseille ont des scores faibles. ",
-        "Ce sont les d\u00e9partements ruraux du ", tags$b("Grand Est, du Sud-Ouest, de Bourgogne et du Massif Central"),
-        " qui dominent : routes d\u00e9partementales \u00e0 double sens sans s\u00e9parateur, ",
-        "forte proportion d\u2019accidents sans tiers (sorties de route), population vieillissante.", tags$br(),
-        tags$em(style="color:#7f8c8d;font-size:12px;",
-          bs_icon("info-circle"),
-          " Les scores exacts varient selon les ann\u00e9es s\u00e9lectionn\u00e9es. L\u2019analyse porte sur 2015-2025 globalement. ",
-          "Les valeurs affich\u00e9es dans le Top 15 sont \u00e0 lire comme des ordres de grandeur relatifs, pas des indicateurs absolus.")
-      ),
+      uiOutput(ns("resultat_score")),
 
       tags$div(class="mt-3"),
 
@@ -258,18 +159,7 @@ ui_analyse <- function(id) {
       div(class="section-title",
           bs_icon("diagram-3-fill"), " Clustering k-means — Profils territoriaux"),
 
-      div(class="methodo-box", style="margin-bottom:16px;",
-        tags$b(bs_icon("diagram-3"), " Methodologie :"), tags$br(),
-        "K-means (k=3, nstart=25, seed=42) sur 6 variables normalis\u00e9es : ",
-        "taux mortalit\u00e9, % nuit, % route d\u00e9partementale, % jeunes, % accidents sans tiers, % weekend. ",
-        "Validation sur 50 seeds : configuration identique \u00e0 chaque fois (structure stable). ",
-        "Silhouette k=3 = 0.278 (k=2 optimal \u00e0 0.359, k=4 = 0.253). ",
-        tags$b("96 d\u00e9partements"), " m\u00e9tropolitains class\u00e9s en 3 profils distincts.", tags$br(),
-        tags$em(style="color:#7f8c8d;font-size:12px;",
-          bs_icon("info-circle"),
-          " k=4 a \u00e9t\u00e9 test\u00e9 et rejet\u00e9 : il fragmente le cluster rural sans gain interpr\u00e9tatif. ",
-          "k=2 est optimal math\u00e9matiquement mais trop grossier pour un usage op\u00e9rationnel.")
-      ),
+      uiOutput(ns("methodo_cluster")),
 
       layout_columns(
         col_widths=c(6,6),
@@ -285,29 +175,13 @@ ui_analyse <- function(id) {
 
       div(class="lecture-box",
         tags$b(bs_icon("eye"), " Comment lire ces deux graphiques :"), tags$br(),
-        "La carte regroupe les 96 d\u00e9partements en ", tags$b("3 profils distincts"),
-        " identifi\u00e9s automatiquement par l\u2019algorithme, sans a priori g\u00e9ographique. ",
-        "Le graphique radar (toile d\u2019araign\u00e9e) montre le profil moyen de chaque groupe sur 6 axes : ",
-        "plus un groupe s\u2019\u00e9tend sur un axe, plus cette caract\u00e9ristique le d\u00e9finit. ",
-        tags$b("Un cluster id\u00e9al (z\u00e9ro risque) occuperait le centre du radar.")
+        "La carte regroupe les 96 départements en ", tags$b("3 groupes"),
+        " selon la structure de leurs accidents, sans a priori géographique. ",
+        "Le radar montre la part moyenne de chaque groupe sur les 4 variables. ",
+        tags$b("La mortalité n'est pas utilisée pour former les groupes : elle sert à les valider.")
       ),
 
-      div(class="resultat-box",
-        tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
-        tags$b("\ud83d\udd34 Rural, routes départementales"), " (17 d\u00e9pts) : ",
-        "taux de mortalit\u00e9 moyen de ", tags$b("10.7%"), ", route d\u00e9partementale 64%. ",
-        "Ce cluster regroupe la France rurale profonde : Massif Central, Sud-Ouest, Est.", tags$br(),
-        tags$b("\ud83d\udfe1 Mixte périurbain et rural"), " (45 d\u00e9pts) : ",
-        "mortalit\u00e9 10.4%, m\u00e9lange de d\u00e9partements p\u00e9riurbains et ruraux moins isol\u00e9s. ",
-        "Ce cluster couvre la majorit\u00e9 de la France de province.", tags$br(),
-        tags$b("\ud83d\udfe2 Urbain m\u00e9tropolitain"), " (34 d\u00e9pts\u00a0: Paris, IDF, Lyon, Bordeaux, Strasbourg...) : ",
-        "mortalit\u00e9 ", tags$b("5.3%"), ", le plus bas. ",
-        "Paris (75) affiche 0.7%, soit ", tags$b("16 fois moins"), " que les d\u00e9partements ruraux les plus expos\u00e9s.", tags$br(),
-        tags$em(style="color:#7f8c8d;font-size:12px;",
-          bs_icon("info-circle"),
-          " Le score composite et le clustering captent des dimensions compl\u00e9mentaires. ",
-          "Le score mesure un risque cumul\u00e9 pond\u00e9r\u00e9\u00a0; le clustering mesure la similarit\u00e9 multidimensionnelle.")
-      ),
+      uiOutput(ns("resultat_cluster")),
 
       tags$div(class="mt-3"),
 
@@ -363,7 +237,7 @@ ui_analyse <- function(id) {
         "R\u00e8gle de lecture : ", tags$b("deux points proches = deux situations fr\u00e9quemment observ\u00e9es ensemble"),
         " dans les m\u00eames accidents. Plus un point est \u00e9loign\u00e9 du centre, ",
         "plus ce profil est ", tags$b("atypique"), ", c\u2019est-\u00e0-dire tr\u00e8s diff\u00e9rent du profil moyen. ",
-        "Les points au centre (V\u00e9hicule l\u00e9ger, Route d\u00e9partementale, Homme) repr\u00e9sentent ",
+        "Les points proches du centre (V\u00e9hicule l\u00e9ger, Route d\u00e9partementale) repr\u00e9sentent ",
         tags$b("l\u2019accident banal et fr\u00e9quent."), tags$br(),
         "Chaque axe explique environ 6% de la variabilit\u00e9 totale. C\u2019est attendu en ACM : ",
         "la r\u00e9alit\u00e9 est multidimensionnelle. ",
@@ -465,10 +339,10 @@ ui_analyse <- function(id) {
 
       div(class="methodo-box", style="margin-bottom:16px;",
         tags$b(bs_icon("info-circle"), " Lecture :"), tags$br(),
-        "Chaque point est un d\u00e9partement. L\u2019axe X repr\u00e9sente le score composite de risque (0-100), ",
+        "Chaque point est un d\u00e9partement. L\u2019axe X repr\u00e9sente le score structurel (0-100), ",
         "l\u2019axe Y la pente de r\u00e9gression lin\u00e9aire du taux de mortalit\u00e9 sur 2015-2025 (pt/an). ",
         "Une pente n\u00e9gative indique une am\u00e9lioration, positive une d\u00e9gradation. ",
-        "La taille du point est proportionnelle \u00e0 l\u2019amplitude (max-min) sur 10 ans.", tags$br(),
+        "La taille du point est proportionnelle \u00e0 l\u2019amplitude (max-min) sur 11 ans.", tags$br(),
         tags$em(style="color:#7f8c8d;font-size:12px;",
           bs_icon("exclamation-triangle"),
           " Couleur : tendance qualifi\u00e9e (R\u00b2\u22650.4) ou instable (R\u00b2<0.4). ",
@@ -486,17 +360,14 @@ ui_analyse <- function(id) {
 
       div(class="lecture-box",
         tags$b(bs_icon("eye"), " Comment lire ce graphique :"), tags$br(),
-        "La courbe loess (ligne sombre) r\u00e9v\u00e8le une relation non lin\u00e9aire : ",
-        "les d\u00e9partements \u00e0 score interm\u00e9diaire (50-65) s\u2019am\u00e9liorent le plus. ",
-        "Les d\u00e9partements \u00e0 tr\u00e8s faible score (urbains) se d\u00e9gradent l\u00e9g\u00e8rement. ",
-        "Les d\u00e9partements \u00e0 tr\u00e8s fort score (rural profond) s\u2019am\u00e9liorent mais de fa\u00e7on irr\u00e9guli\u00e8re."
+        "La courbe loess (ligne sombre) résume la tendance moyenne entre le score structurel et la pente d'évolution de la mortalité. Le détail par quartile de score est calculé automatiquement dans la boîte ci-dessous."
       ),
 
       uiOutput(ns("corr_resultat_box")),
 
       tags$div(class="mt-3"),
 
-      div(class="section-title", bs_icon("lightbulb-fill"), " Synthese & Recommandations"),
+      div(class="section-title", bs_icon("lightbulb-fill"), " Synthèse"),
       uiOutput(ns("synthese_box"))
     )
   )
@@ -754,18 +625,18 @@ server_analyse <- function(id, app_data) {
         "Tendance nationale : ",
         tags$b(paste0(mort_debut_fr, "%")), " (2015-2016) ",
         "\u2192 ", tags$b(paste0(mort_fin_fr, "%")), " (2023-2025). ",
-        "La progression n\u2019est pas lin\u00e9aire (R\u00b2=", r2_fr, ") : creux en 2020-2021, remontée ensuite.",
+        "Une droite ajuste mal la s\u00e9rie nationale (R\u00b2=", r2_fr, ") : creux en 2020-2021, remontée ensuite.",
         tags$br(), tags$br(),
 
         if (nrow(phrases_amelio) > 0) tagList(
-          tags$b("Am\u00e9lioration significative (R\u00b2 \u2265 0.4) :"), tags$br(),
+          tags$b("Am\u00e9lioration marquée (R\u00b2 \u2265 0.4) :"), tags$br(),
           tags$ul(style="margin:4px 0;padding-left:18px;",
             lapply(phrases_amelio$phrase, tags$li)
           )
         ),
 
         if (nrow(phrases_degrad) > 0) tagList(
-          tags$b("D\u00e9gradation significative (R\u00b2 \u2265 0.4) :"), tags$br(),
+          tags$b("D\u00e9gradation marquée (R\u00b2 \u2265 0.4) :"), tags$br(),
           tags$ul(style="margin:4px 0;padding-left:18px;",
             lapply(phrases_degrad$phrase, tags$li)
           )
@@ -884,7 +755,7 @@ server_analyse <- function(id, app_data) {
       })
 
       p |> layout(
-        xaxis = list(title="Score composite de risque", range=c(15,95),
+        xaxis = list(title="Score composite de risque", range=c(0,100),
                      ticksuffix="", zeroline=FALSE),
         yaxis = list(title="Pente du taux de mortalit\u00e9 (pt/an)",
                      ticksuffix="", zeroline=FALSE),
@@ -927,13 +798,13 @@ server_analyse <- function(id, app_data) {
 
       div(class="resultat-box",
         tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
-        "La relation score \u00d7 pente n\u2019est pas lin\u00e9aire (R=",
+        "Corrélation entre le score et la pente d'évolution (r =",
         tags$b(r_score_pente), "). ",
-        "En revanche, le niveau de d\u00e9part pr\u00e9dit mieux l\u2019\u00e9volution (R mortalit\u00e9 initiale \u00d7 pente = ",
+        "Par ailleurs, le niveau de d\u00e9part pr\u00e9dit mieux l\u2019\u00e9volution (R mortalit\u00e9 initiale \u00d7 pente = ",
         tags$b(r_mort_pente), ") : ",
         "les d\u00e9partements qui partaient haut ont davantage baiss\u00e9. ",
-        "Les forts scores ont aussi une plus grande amplitude de variation (R=",
-        tags$b(r_score_amp), ").",
+        "Les départements à fort score ont aussi une plus grande amplitude de variation annuelle (r=",
+        tags$b(r_score_amp), "), mais ils comptent peu d'accidents : leurs taux annuels sont plus instables, donc cette amplitude reflète en partie le bruit statistique.",
         tags$br(), tags$br(),
 
         tags$b("Par quartile de score (pente m\u00e9diane) :"),
@@ -973,7 +844,7 @@ server_analyse <- function(id, app_data) {
     output$data_summary <- renderUI({
       f <- features()
       tagList(bs_icon("database"), " ",
-              tags$strong(format(nrow(app_data$accidents_dashboard), big.mark="\u00a0")),
+              tags$strong(format(attr(app_data$features_clustering, "meta")$n_accidents, big.mark="\u00a0")),
               " accidents | ",
               tags$strong(nrow(f)), " departements")
     })
@@ -1024,11 +895,13 @@ server_analyse <- function(id, app_data) {
       f <- features() |>
         arrange(desc(score_risque)) |>
         slice_head(n=15) |>
+        mutate(across(c(part_route_dept, part_hors_agglo, taux_mortalite), ~ round(.x, 1))) |>
         select(departement, region, score_risque, classe_risque,
-               taux_mortalite, taux_nuit) |>
+               part_route_dept, part_hors_agglo, taux_mortalite) |>
         rename(Departement=departement, Region=region,
                Score=score_risque, Classe=classe_risque,
-               `Mort.%`=taux_mortalite, `Nuit%`=taux_nuit)
+               `Route dép.%`=part_route_dept, `Hors agglo%`=part_hors_agglo,
+               `Mortalité observée%`=taux_mortalite)
 
       datatable(f, rownames=FALSE,
         options=list(pageLength=15, dom="t", ordering=FALSE),
@@ -1038,7 +911,7 @@ server_analyse <- function(id, app_data) {
           backgroundSize="100% 90%", backgroundRepeat="no-repeat",
           backgroundPosition="center") |>
         formatStyle("Classe",
-          color=styleInterval(c("Elevé","Modéré","Très élevé"),
+          color=styleEqual(c("Faible","Modéré","Élevé","Très élevé"),
             c("#27ae60","#f39c12","#e74c3c","#c0392b")))
     })
 
@@ -1079,59 +952,50 @@ server_analyse <- function(id, app_data) {
 
     # ── Radar clusters ────────────────────────────────────────────────────────
     output$radar_clusters <- renderPlotly({
+      vars <- c("part_route_dept","part_sans_collision","part_nuit_sans_eclairage","part_hors_agglo")
+      lab  <- c("Route départementale","Sorties de route","Nuit sans éclairage","Hors agglomération")
       f <- features() |>
         group_by(cluster, cluster_nom) |>
-        summarise(
-          `Mortalite`      = round(mean(taux_mortalite),1),
-          `Nuit`           = round(mean(taux_nuit),1),
-          `Route dept`     = round(mean(taux_route_dept)/2,1),
-          `Jeunes`         = round(mean(taux_jeunes)/2,1),
-          `Sans collision` = round(mean(taux_sans_collision)*2,1),
-          `Weekend`        = round(mean(taux_weekend)*2,1),
-          .groups="drop"
-        )
-
-      vars <- c("Mortalite","Nuit","Route dept","Jeunes","Sans collision","Weekend")
+        summarise(dplyr::across(dplyr::all_of(vars), ~ round(mean(.x), 1)), .groups="drop")
       p <- plot_ly(type="scatterpolar", fill="toself", mode="lines")
       for (i in seq_len(nrow(f))) {
-        vals <- c(as.numeric(f[i, vars]), as.numeric(f[i, vars[1]]))
+        vals <- as.numeric(f[i, vars])
+        col  <- .CLUSTER_COULEURS[[f$cluster[i]]]
         p <- p |> add_trace(
-          r     = vals,
-          theta = c(vars, vars[1]),
-          name  = f$cluster_nom[i],
-          mode  = "lines",
-          line  = list(color=.CLUSTER_COULEURS[f$cluster[i]]),
-          fillcolor = paste0("#", gsub("#","", .CLUSTER_COULEURS[f$cluster[i]]), "33")
-        )
+          r = c(vals, vals[1]), theta = c(lab, lab[1]),
+          name = f$cluster_nom[i], mode = "lines",
+          line = list(color = col), fillcolor = paste0(col, "33"))
       }
       p |> layout(
-        polar = list(radialaxis=list(visible=TRUE, range=c(0,25))),
-        legend= list(orientation="h", y=-0.15),
-        paper_bgcolor="transparent",
-        margin=list(t=20,b=60))
+        polar = list(radialaxis = list(visible = TRUE, ticksuffix = "%")),
+        legend = list(orientation = "h", y = -0.15),
+        paper_bgcolor = "transparent",
+        margin = list(t = 20, b = 60))
     })
 
     # ── Tableau clusters ──────────────────────────────────────────────────────
     output$table_clusters <- renderDT({
       f <- features() |>
         arrange(cluster, desc(score_risque)) |>
+        mutate(across(c(part_route_dept, part_sans_collision, part_nuit_sans_eclairage, part_hors_agglo,
+                        part_accidents_18_24, part_accidents_2rm, part_accidents_weekend, taux_mortalite),
+                      ~ round(.x, 1))) |>
         select(cluster_nom, departement, region, score_risque,
-               taux_mortalite, taux_nuit, taux_route_dept,
-               taux_sans_collision, nb_accidents) |>
-        rename(Cluster=cluster_nom, Departement=departement,
-               Region=region, Score=score_risque,
-               `Mort.%`=taux_mortalite, `Nuit%`=taux_nuit,
-               `Route dept%`=taux_route_dept,
-               `Sans collision%`=taux_sans_collision,
-               `Nb acc.`=nb_accidents)
+               part_route_dept, part_sans_collision, part_nuit_sans_eclairage, part_hors_agglo,
+               part_accidents_18_24, part_accidents_2rm, part_accidents_weekend,
+               taux_mortalite, nb_accidents) |>
+        rename(Groupe=cluster_nom, Departement=departement, Region=region, Score=score_risque,
+               `Route dép.%`=part_route_dept, `Sans collision%`=part_sans_collision,
+               `Nuit sans éclairage%`=part_nuit_sans_eclairage, `Hors agglo%`=part_hors_agglo,
+               `Hors score : 18-24 ans%`=part_accidents_18_24, `Hors score : 2RM%`=part_accidents_2rm,
+               `Hors score : week-end%`=part_accidents_weekend,
+               `Mortalité observée%`=taux_mortalite, `Nb acc.`=nb_accidents)
 
       datatable(f, rownames=FALSE, filter="top",
-        options=list(pageLength=15, scrollY="350px", dom="ftp"),
+        options=list(pageLength=15, scrollX=TRUE, scrollY="350px", dom="ftp"),
         class="table table-hover table-sm") |>
-        formatStyle("Cluster",
-          backgroundColor = styleEqual(
-            c("Rural, routes départementales","Mixte périurbain et rural","Urbain m\u00e9tropolitain"),
-            c("#f8d7da","#fff3cd","#d4edda")))
+        formatStyle("Groupe",
+          backgroundColor = styleEqual(unname(.CLUSTER_NOMS), c("#f8d7da","#fff3cd","#d4edda")))
     })
 
     # ── ACM ───────────────────────────────────────────────────────────────────
@@ -1303,6 +1167,78 @@ server_analyse <- function(id, app_data) {
       contentType = "application/pdf"
     )
 
+    # ── Textes dynamiques (valeurs lues dans les méta-données du fichier) ─────
+    .meta <- function() attr(app_data$features_clustering, "meta")
+
+    output$methodo_score <- renderUI({
+      m <- .meta()
+      div(class="methodo-box", style="margin-bottom:16px;",
+        tags$b(bs_icon("calculator"), " Méthodologie du score structurel :"), tags$br(),
+        "Moyenne simple de 4 parts standardisées (z-scores), ramenée sur 0-100 : ",
+        tags$b("routes départementales"), ", ", tags$b("accidents sans collision (sorties de route)"), ", ",
+        tags$b("nuit sans éclairage public"), " et ", tags$b("hors agglomération"), ". ",
+        "Poids égaux ; variables et sens du risque choisis sur un critère conceptuel (caractéristiques du territoire, pas des usagers), avant de calculer la corrélation avec la mortalité. ",
+        tags$b("La mortalité n'entre pas dans le score"), " : elle sert uniquement à le valider.", tags$br(),
+        tags$em(style="color:#7f8c8d;font-size:12px;",
+          bs_icon("info-circle"),
+          if (!is.null(m)) paste0(" Validation : corrélation de Pearson r = ", m$pearson, " (R² = ", m$r2,
+            ", Spearman = ", m$spearman, ") avec le taux de mortalité observé, sur 96 départements métropolitains, ", m$periode, ". "),
+          if (!is.null(m)) paste0("Les quatre variables sont corrélées : la 1re composante d'une ACP en porte ", m$pc1_var,
+            " % de la variance, elles mesurent surtout une même dimension. "),
+          "Association descriptive entre départements, non causale. ",
+          "Indicateurs d'exposition (part d'accidents dont la tranche d'âge dominante est 18-24 ans, deux-roues motorisés, week-end) : affichés dans le tableau, hors score.")
+      )
+    })
+
+    output$methodo_cluster <- renderUI({
+      m <- .meta(); sil <- if (!is.null(m)) m$silhouette else NULL
+      div(class="methodo-box", style="margin-bottom:16px;",
+        tags$b(bs_icon("diagram-3"), " Méthodologie :"), tags$br(),
+        "K-means (k=3, nstart=25, seed=42) sur les 4 variables standardisées du score. La mortalité n'est pas utilisée pour former les groupes. ",
+        if (!is.null(sil)) paste0("Silhouette : k=2 = ", sil[["k2"]], ", k=3 = ", sil[["k3"]], ", k=4 = ", sil[["k4"]], ". "),
+        tags$b("96 départements"), " métropolitains répartis en 3 groupes.", tags$br(),
+        tags$em(style="color:#7f8c8d;font-size:12px;",
+          bs_icon("info-circle"),
+          " k=2 est le meilleur choix mathématique ; k=3 est conservé de la version initiale de l'analyse, pour l'interprétation. ",
+          "Les groupes découpent un gradient continu plutôt que des classes nettement séparées.")
+      )
+    })
+
+    output$resultat_cluster <- renderUI({
+      res <- features() |> group_by(cluster, cluster_nom) |>
+        summarise(n = n(), rd = round(mean(part_route_dept), 0), ha = round(mean(part_hors_agglo), 0),
+                  mort = round(mean(taux_mortalite), 1), .groups = "drop") |> arrange(cluster)
+      lignes <- lapply(seq_len(nrow(res)), function(i) { r <- res[i, ]
+        tagList(tags$span(style=paste0("color:", .CLUSTER_COULEURS[[r$cluster]], ";font-size:16px;"), "●"), " ",
+                tags$b(r$cluster_nom), " (", r$n, " départements) : routes départementales ", r$rd,
+                " % des accidents, hors agglomération ", r$ha, " %. Mortalité observée (validation) : ",
+                tags$b(paste0(r$mort, " %")), ".", tags$br()) })
+      div(class="resultat-box",
+        tags$b(bs_icon("graph-up"), " Ce que les données nous disent :"), tags$br(),
+        tagList(lignes),
+        tags$em(style="color:#7f8c8d;font-size:12px;",
+          bs_icon("info-circle"),
+          " La mortalité moyenne suit l'ordre des groupes sans avoir servi à les former. ",
+          "Les parts sont calculées parmi les accidents, pas parmi le réseau routier."))
+    })
+
+    output$resultat_score <- renderUI({
+      f <- features(); m <- .meta()
+      haut <- f |> arrange(desc(score_risque)) |> slice_head(n = 5)
+      bas  <- f |> arrange(score_risque) |> slice_head(n = 3)
+      div(class="resultat-box",
+        tags$b(bs_icon("graph-up"), " Ce que les données nous disent :"), tags$br(),
+        "Scores les plus élevés : ", tags$b(paste(haut$departement, collapse = ", ")), ". ",
+        "Scores les plus bas : ", tags$b(paste(bas$departement, collapse = ", ")), ". ",
+        if (!is.null(m)) paste0("Le score, construit sans la mortalité, est corrélé à la mortalité observée (r = ",
+                                m$pearson, ", R² = ", m$r2, ")."),
+        tags$br(),
+        tags$em(style="color:#7f8c8d;font-size:12px;",
+          bs_icon("info-circle"),
+          " Corrélation entre départements : elle décrit une association, elle ne prouve pas de causalité. ",
+          "Une partie du lien est mécanique, car les accidents hors agglomération sont plus graves."))
+    })
+
     output$synthese_box <- renderUI({
       f <- features()
 
@@ -1310,93 +1246,48 @@ server_analyse <- function(id, app_data) {
       top3       <- f |> arrange(desc(score_risque)) |> slice_head(n=3)
       bottom1    <- f |> arrange(score_risque) |> slice_head(n=1)
 
-      cl_rural   <- f |> filter(cluster_nom == "Rural, routes départementales")
-      cl_urbain  <- f |> filter(cluster_nom == "Urbain m\u00e9tropolitain")
-
-      mort_rural  <- round(mean(cl_rural$taux_mortalite,  na.rm=TRUE), 1)
-      mort_urbain <- round(mean(cl_urbain$taux_mortalite, na.rm=TRUE), 1)
-      ratio_mort  <- round(mort_rural / mort_urbain, 1)
-
-      n_tres_eleve <- sum(f$classe_risque == "Tr\u00e8s \u00e9lev\u00e9", na.rm=TRUE)
-      n_eleve      <- sum(f$classe_risque == "\u00c9lev\u00e9",       na.rm=TRUE)
-      pct_risque   <- round((n_tres_eleve + n_eleve) / nrow(f) * 100)
-
-      sc_max  <- round(max(f$score_risque), 1)
-      sc_min  <- round(min(f$score_risque), 1)
-      ratio_sc <- round(sc_max / sc_min, 1)
-
-      dept_max_sc   <- f$departement[which.max(f$score_risque)]
-      dept_max_scol <- f |> arrange(desc(taux_sans_collision)) |> slice_head(n=1)
-      dept_max_rd   <- f |> arrange(desc(taux_route_dept))    |> slice_head(n=1)
-
-      pct_rd_rural  <- round(mean(cl_rural$taux_route_dept,      na.rm=TRUE), 1)
-      pct_rd_urbain <- round(mean(cl_urbain$taux_route_dept,     na.rm=TRUE), 1)
-      pct_sc_rural  <- round(mean(cl_rural$taux_sans_collision,  na.rm=TRUE), 1)
-      pct_sc_urbain <- round(mean(cl_urbain$taux_sans_collision, na.rm=TRUE), 1)
+      meta <- attr(app_data$features_clustering, "meta")
+      cl_haut <- f |> filter(cluster == "1")
+      cl_bas  <- f |> filter(cluster == "3")
+      mort_haut  <- round(mean(cl_haut$taux_mortalite, na.rm=TRUE), 1)
+      mort_bas   <- round(mean(cl_bas$taux_mortalite,  na.rm=TRUE), 1)
+      ratio_mort <- round(mort_haut / mort_bas, 1)
+      nb_classe  <- table(factor(f$classe_risque, levels=c("Faible","Modéré","Élevé","Très élevé")))
+      sc_max <- round(max(f$score_risque), 1); sc_min <- round(min(f$score_risque), 1)
+      dept_max_sc <- f$departement[which.max(f$score_risque)]
+      dept_max_scol <- f |> arrange(desc(part_sans_collision)) |> slice_head(n=1)
+      rd_haut <- round(mean(cl_haut$part_route_dept), 1); rd_bas <- round(mean(cl_bas$part_route_dept), 1)
+      ha_haut <- round(mean(cl_haut$part_hors_agglo), 1); ha_bas <- round(mean(cl_bas$part_hors_agglo), 1)
 
       div(class="insight-box",
         tags$b(bs_icon("lightbulb"), " Enseignements calculés depuis les données :"),
         tags$ul(style="margin:10px 0 0;padding-left:20px;line-height:2.1;",
-
-          # Insight 1 : fracture urbain-rural — chiffré
-          tags$li(
-            "Mortalité des accidents dans le cluster ", tags$b("Rural, routes départementales"),
-            " : ", tags$b(paste0(mort_rural, "%")), ", contre ",
-            tags$b(paste0(mort_urbain, "%")), " dans le cluster ",
-            tags$b("Urbain métropolitain"), ". Rapport de ",
-            tags$b(paste0(ratio_mort, "×")), "."
-          ),
-
-          # Insight 2 : score extrêmes
-          tags$li(
-            "Score de risque composite : de ", tags$b(paste0(sc_min, "/100")),
-            " (", bottom1$departement, ") à ",
-            tags$b(paste0(sc_max, "/100")), " (", dept_max_sc, "). ",
-            "L'amplitude est de ", tags$b(paste0(ratio_sc, "×")), "."
-          ),
-
-          # Insight 3 : part du territoire à risque élevé+
-          tags$li(
-            tags$b(paste0(n_tres_eleve, " départements")),
-            " classés \"Très élevé\" et ",
-            tags$b(paste0(n_eleve, " \"Élevé\"")),
-            ", soit ", tags$b(paste0(pct_risque, "%")),
-            " des départements métropolitains."
-          ),
-
-          # Insight 4 : route départementale — facteur structurel
-          tags$li(
-            "La route départementale représente en moyenne ",
-            tags$b(paste0(pct_rd_rural, "%")), " des accidents dans le cluster rural,",
-            " contre ", tags$b(paste0(pct_rd_urbain, "%")), " dans le cluster urbain.",
-            " C'est le facteur le mieux corrélé à la mortalité (R²=26%)."
-          ),
-
-          # Insight 5 : accidents sans tiers
-          tags$li(
-            "Accidents sans tiers (sorties de route, terminologie ONISR) : ",
-            tags$b(paste0(pct_sc_rural, "%")), " dans le cluster rural contre ",
-            tags$b(paste0(pct_sc_urbain, "%")), " dans le cluster urbain. ",
-            "Département le plus exposé : ", tags$b(dept_max_scol$departement),
-            " (", round(dept_max_scol$taux_sans_collision, 1), "%)."
-          ),
-
-          # Insight 6 : top 3
-          tags$li(
-            "Top 3 score de risque : ",
-            tags$b(paste(
-              paste0(top3$departement, " (", top3$score_risque, ")"),
-              collapse=" \u203a "
-            )), "."
-          )
+          tags$li("Mortalité observée moyenne : ", tags$b(paste0(mort_haut, "%")), " dans le groupe ",
+                  tags$b("Réseau rural dominant"), ", contre ", tags$b(paste0(mort_bas, "%")),
+                  " dans le groupe ", tags$b("Réseau urbain dominant"), " (rapport de ",
+                  tags$b(paste0(ratio_mort, "×")), "). La mortalité n'a pas servi à former les groupes."),
+          tags$li("Écart entre départements : la part de routes départementales va de ",
+                  tags$b(paste0(round(min(f$part_route_dept), 0), "%")), " (", f$departement[which.min(f$part_route_dept)], ") à ",
+                  tags$b(paste0(round(max(f$part_route_dept), 0), "%")), " (", f$departement[which.max(f$part_route_dept)], ")."),
+          if (!is.null(meta)) tags$li("Validation : le score, construit sans la mortalité, est corrélé au taux de mortalité observé (r = ",
+                  tags$b(meta$pearson), ", R² = ", tags$b(meta$r2), "). Association descriptive entre ",
+                  nrow(f), " départements, non causale."),
+          tags$li("Routes départementales : ", tags$b(paste0(rd_haut, "%")), " des accidents dans le groupe rural, contre ",
+                  tags$b(paste0(rd_bas, "%")), " dans le groupe urbain. Hors agglomération : ",
+                  tags$b(paste0(ha_haut, "%")), " contre ", tags$b(paste0(ha_bas, "%")), "."),
+          tags$li("Accidents sans collision (sorties de route) : maximum dans le département ",
+                  tags$b(dept_max_scol$departement), " (", round(dept_max_scol$part_sans_collision, 1), "%)."),
+          tags$li("Classes par quartiles : ", paste(names(nb_classe), nb_classe, sep = " = ", collapse = ", "), "."),
+          tags$li("Top 3 du score : ",
+                  tags$b(paste(paste0(top3$departement, " (", top3$score_risque, ")"), collapse=" › ")), ".")
         ),
 
         tags$p(style="margin:10px 0 0;font-size:12px;color:#7f8c8d;",
           bs_icon("info-circle"),
           " Ces chiffres sont calculés directement depuis les ",
-          format(nrow(app_data$accidents_dashboard), big.mark="\u00a0"),
+          format(attr(app_data$features_clustering, "meta")$n_accidents, big.mark="\u00a0"),
           " accidents de la base BAAC 2015-2025. Ils se mettent à jour",
-          " automatiquement si la base de données est actualisée."
+          " dès que le pipeline de données est relancé."
         )
       )
     })
