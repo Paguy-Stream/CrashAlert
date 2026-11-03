@@ -221,7 +221,7 @@ ui_dashboard <- function(id) {
       layout_columns(
         col_widths=c(7,5),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("graph-up"), " Évolution annuelle")),
+          card_header(tagList(bs_icon("graph-up"), " Évolution des accidents")),
           card_body(plotlyOutput(ns("evolution"), height="280px")),
           card_footer(style="padding:4px 12px;background:transparent;border-top:1px solid #f0f0f0;",
             tags$button(class="interp-btn",
@@ -476,12 +476,20 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     # Évolution
     output$evolution <- renderPlotly({
-      d <- filtered() |> group_by(annee) |>
+      d0 <- filtered(); req(nrow(d0) > 0)
+      mois_fr <- c("Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc")
+      une_annee <- dplyr::n_distinct(d0$annee) == 1
+      d <- (if (une_annee) group_by(d0, periode = as.integer(mois))
+            else           group_by(d0, periode = as.integer(annee))) |>
         summarise(Accidents = n(),
                   Mortels = sum(gravite_accident == "Mortel", na.rm = TRUE),
-                  Graves  = sum(gravite_accident == "Grave",  na.rm = TRUE), .groups = "drop")
-      req(nrow(d) > 0)
-      plot_ly(d, x=~annee, y=~Accidents, name="Accidents",
+                  Graves  = sum(gravite_accident == "Grave",  na.rm = TRUE), .groups = "drop") |>
+        arrange(periode)
+      axe <- if (une_annee)
+        list(title = paste("Mois de", d0$annee[1]), showgrid = FALSE,
+             tickmode = "array", tickvals = 1:12, ticktext = mois_fr)
+      else list(title = "Année", showgrid = FALSE, dtick = 1, tickformat = "d")
+      plot_ly(d, x=~periode, y=~Accidents, name="Accidents",
               type="scatter", mode="lines+markers",
               line=list(color="#1b3a6b",width=2),
               marker=list(color="#1b3a6b",size=6)) |>
@@ -491,7 +499,7 @@ server_dashboard <- function(id, app_data, app_filters) {
         add_trace(y=~Graves, name="Graves",
                   line=list(color="#f39c12",width=2),
                   marker=list(color="#f39c12",size=6)) |>
-        layout(xaxis=list(title="Année",showgrid=FALSE,dtick=1,tickformat="d"),
+        layout(xaxis=axe,
                yaxis=list(title="Nombre",gridcolor="#f0f0f0"),
                legend=list(orientation="h",y=-0.3),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
@@ -669,10 +677,16 @@ server_dashboard <- function(id, app_data, app_filters) {
         dplyr::group_by(annee) |>
         dplyr::summarise(Accidents=dplyr::n(), .groups="drop")
       req(nrow(d) > 0)
-      if (nrow(d) == 1) return(div(class = "interp-box",
-        tags$b("\ud83d\udcca Ce que montre ce graphique :"), tags$br(),
-        tags$p(sprintf("La sélection ne couvre qu’une année (%d) : %s accidents.",
-                       d$annee, format(d$Accidents, big.mark = "\u00a0")))))
+      if (nrow(d) == 1) {
+        dm <- filtered() |> dplyr::count(mois = as.integer(mois))
+        mm <- c("janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre")
+        return(div(class = "interp-box",
+          tags$b("\ud83d\udcca Ce que montre ce graphique :"), tags$br(),
+          tags$p(sprintf("En %d : %s accidents. Mois le plus accidentogène : %s (%s) ; le moins accidentogène : %s (%s).",
+                         d$annee, format(d$Accidents, big.mark = "\u00a0"),
+                         mm[dm$mois[which.max(dm$n)]], format(max(dm$n), big.mark = "\u00a0"),
+                         mm[dm$mois[which.min(dm$n)]], format(min(dm$n), big.mark = "\u00a0")))))
+      }
       an_max <- d$annee[which.max(d$Accidents)]
       an_min <- d$annee[which.min(d$Accidents)]
       n_max  <- format(max(d$Accidents), big.mark=" ")
