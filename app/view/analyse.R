@@ -92,7 +92,7 @@ ui_analyse <- function(id) {
     div(class = "ana-topbar",
       div(style="display:flex;align-items:center;gap:16px;",
         div(style="font-weight:700;color:#1b3a6b;font-size:14px;",
-            bs_icon("graph-up-arrow"), " Statistiques approfondies — France metropolitaine 2015-2025"),
+            bs_icon("graph-up-arrow"), " Statistiques approfondies — France métropolitaine 2015-2025"),
         div(style="color:#6c757d;font-size:12px;",
             bs_icon("info-circle"),
             " Clustering k-means | Score de risque structurel | ACM")
@@ -136,7 +136,7 @@ ui_analyse <- function(id) {
           card_body(padding=0, leafletOutput(ns("carte_risque"), height="460px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("trophy-fill"), " Top 15 departements a risque")),
+          card_header(tagList(bs_icon("trophy-fill"), " Top 15 départements à risque")),
           card_body(DTOutput(ns("top15_risque")))
         )
       ),
@@ -201,8 +201,8 @@ ui_analyse <- function(id) {
           bs_icon("diagram-3"), " ACM — Analyse des Correspondances Multiples"),
 
       div(class="methodo-box", style="margin-bottom:16px;",
-        tags$b(bs_icon("graph-up"), " Methodologie :"), tags$br(),
-        "ACM sur échantillon aléatoire de 20 000 accidents métropolitains. Variables actives : ",
+        tags$b(bs_icon("graph-up"), " Méthodologie :"), tags$br(),
+        "ACM sur échantillon stratifié par année de 20 000 accidents métropolitains. Variables actives : ",
         tags$b("tranche d\u2019\u00e2ge, sexe, cat\u00e9gorie v\u00e9hicule, m\u00e9t\u00e9o, luminosit\u00e9, type de route."),
         " La gravité n'est pas une variable de l'ACM. ",
         "Les modalit\u00e9s proches sur le biplot sont statistiquement associ\u00e9es."
@@ -217,7 +217,7 @@ ui_analyse <- function(id) {
         ),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("percent"),
-                              " Variance expliquee par dimension")),
+                              " Variance expliquée par dimension")),
           card_body(
             plotlyOutput(ns("acm_variance"), height="240px"),
             tags$hr(),
@@ -308,7 +308,7 @@ ui_analyse <- function(id) {
 
       # ── Section 5 : Corrélation score × évolution ─────────────────────────────
       div(class="section-title", bs_icon("arrow-left-right"),
-          " Correlation score de risque \u00d7 \u00e9volution temporelle"),
+          " Corrélation score de risque \u00d7 \u00e9volution temporelle"),
 
       div(class="methodo-box", style="margin-bottom:16px;",
         tags$b(bs_icon("info-circle"), " Lecture :"), tags$br(),
@@ -819,7 +819,7 @@ server_analyse <- function(id, app_data) {
       tagList(bs_icon("database"), " ",
               tags$strong(format(attr(app_data$features_clustering, "meta")$n_accidents, big.mark="\u00a0")),
               " accidents | ",
-              tags$strong(nrow(f)), " departements")
+              tags$strong(nrow(f)), " départements")
     })
 
     # GeoJSON
