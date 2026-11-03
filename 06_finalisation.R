@@ -96,7 +96,7 @@ metro <- c(setdiff(sprintf("%02d", 1:95), "20"), "2A", "2B")
 bm <- filter(base, dep %in% metro)
 new_evd <- bm |> group_by(annee, dep_clean = dep) |>
   summarise(departement = first(departement), taux_mort = round(mean(gravite_accident == "Mortel") * 100, 2),
-            n = n(), .groups = "drop") |> filter(n >= 50)
+            n = n(), .groups = "drop")
 new_evf <- bm |> group_by(annee) |>
   summarise(taux_mort = round(mean(gravite_accident == "Mortel") * 100, 3), .groups = "drop")
 

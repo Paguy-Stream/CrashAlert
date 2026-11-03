@@ -476,10 +476,11 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     # Évolution
     output$evolution <- renderPlotly({
-      d <- app_data$agg_evolution |> group_by(annee) |>
-        summarise(Accidents=sum(nb_accidents,na.rm=TRUE),
-                  Mortels=sum(nb_mortels,na.rm=TRUE),
-                  Graves=sum(nb_graves,na.rm=TRUE), .groups="drop")
+      d <- filtered() |> group_by(annee) |>
+        summarise(Accidents = n(),
+                  Mortels = sum(gravite_accident == "Mortel", na.rm = TRUE),
+                  Graves  = sum(gravite_accident == "Grave",  na.rm = TRUE), .groups = "drop")
+      req(nrow(d) > 0)
       plot_ly(d, x=~annee, y=~Accidents, name="Accidents",
               type="scatter", mode="lines+markers",
               line=list(color="#1b3a6b",width=2),
@@ -490,7 +491,7 @@ server_dashboard <- function(id, app_data, app_filters) {
         add_trace(y=~Graves, name="Graves",
                   line=list(color="#f39c12",width=2),
                   marker=list(color="#f39c12",size=6)) |>
-        layout(xaxis=list(title="Année",showgrid=FALSE),
+        layout(xaxis=list(title="Année",showgrid=FALSE,dtick=1,tickformat="d"),
                yaxis=list(title="Nombre",gridcolor="#f0f0f0"),
                legend=list(orientation="h",y=-0.3),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
@@ -513,11 +514,11 @@ server_dashboard <- function(id, app_data, app_filters) {
       plot_ly(d, x=~categorie_vehicule, y=~n,
               type="bar", marker=list(color="#1b3a6b"),
               name="Accidents",
-              text=~paste0(taux,"% mortels"), textposition="outside") |>
+              text=~paste0(taux,"% mortels"), textposition="outside", cliponaxis=FALSE) |>
         layout(xaxis=list(title="", tickangle=-30),
                yaxis=list(title="Nb accidents"),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=10,b=80)) |>
+               margin=list(t=35,b=80)) |>
         plotly::config(displayModeBar=FALSE)
     })
 
@@ -560,12 +561,12 @@ server_dashboard <- function(id, app_data, app_filters) {
                 type="bar", orientation="h",
                 marker=list(color="#4a6fa5"),
                 text=~format(n, big.mark=" "),
-                textposition="outside") |>
+                textposition="outside", cliponaxis=FALSE) |>
           layout(xaxis=list(title="Nombre d'accidents"),
                  yaxis=list(title="", categoryorder="array",
                             categoryarray=~conditions_meteo),
                  paper_bgcolor="transparent", plot_bgcolor="transparent",
-                 margin=list(t=5,r=60)) |>
+                 margin=list(t=5,r=80)) |>
           plotly::config(displayModeBar=FALSE)
       } else {
         d <- d |> dplyr::arrange(dplyr::desc(taux_mortalite)) |>
@@ -578,12 +579,12 @@ server_dashboard <- function(id, app_data, app_filters) {
                             colorscale=list(c(0,"#fff3cd"),c(1,"#dc3545")),
                             showscale=FALSE),
                 text=~paste0(round(taux_mortalite,1),"%"),
-                textposition="outside") |>
+                textposition="outside", cliponaxis=FALSE) |>
           layout(xaxis=list(title="Taux mortalité (%)"),
                  yaxis=list(title="", categoryorder="array",
                             categoryarray=~conditions_meteo),
                  paper_bgcolor="transparent", plot_bgcolor="transparent",
-                 margin=list(t=5,r=60)) |>
+                 margin=list(t=5,r=80)) |>
           plotly::config(displayModeBar=FALSE)
       }
     })
@@ -614,14 +615,13 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     # Top 15 départements
     output$top_dept <- renderDT({
-      d <- app_data$agg_departement |>
-        # Re-grouper pour éliminer les doublons de codes/périodes dans le RDS
+      d <- filtered() |>
         group_by(departement, region) |>
         summarise(
-          nb_accidents   = sum(nb_accidents,   na.rm=TRUE),
-          nb_mortels     = sum(nb_mortels,     na.rm=TRUE),
-          nb_graves      = sum(nb_graves,      na.rm=TRUE),
-          taux_mortalite = round(sum(nb_mortels)/sum(nb_accidents)*100, 2),
+          nb_accidents   = n(),
+          nb_mortels     = sum(gravite_accident == "Mortel", na.rm = TRUE),
+          nb_graves      = sum(gravite_accident == "Grave",  na.rm = TRUE),
+          taux_mortalite = round(sum(gravite_accident == "Mortel", na.rm = TRUE) / n() * 100, 2),
           .groups = "drop"
         ) |>
         mutate(classe_gravite = dplyr::case_when(
@@ -669,6 +669,10 @@ server_dashboard <- function(id, app_data, app_filters) {
         dplyr::group_by(annee) |>
         dplyr::summarise(Accidents=dplyr::n(), .groups="drop")
       req(nrow(d) > 0)
+      if (nrow(d) == 1) return(div(class = "interp-box",
+        tags$b("\ud83d\udcca Ce que montre ce graphique :"), tags$br(),
+        tags$p(sprintf("La sélection ne couvre qu’une année (%d) : %s accidents.",
+                       d$annee, format(d$Accidents, big.mark = "\u00a0")))))
       an_max <- d$annee[which.max(d$Accidents)]
       an_min <- d$annee[which.min(d$Accidents)]
       n_max  <- format(max(d$Accidents), big.mark=" ")
@@ -700,17 +704,17 @@ server_dashboard <- function(id, app_data, app_filters) {
       danger   <- d |> dplyr::filter(taux > 10) |> dplyr::arrange(dplyr::desc(taux))
       pct_top1 <- round(top1$n / sum(d$n) * 100, 1)
       danger_txt <- if (nrow(danger) >= 2) {
-        paste0(nrow(danger), " catégories dépassent 10%% de mortalité : ",
+        paste0(nrow(danger), " catégories dépassent 10 % de mortalité : ",
           paste(sprintf("%s (%.1f%%)", tolower(danger$categorie_vehicule), danger$taux),
                 collapse=", "), ".")
       } else {
-        sprintf("Les %s présentent le taux le plus élevé (%.1f%%).",
+        sprintf("Taux le plus élevé : %s (%.1f%%).",
           tolower(d$categorie_vehicule[which.max(d$taux)]), max(d$taux))
       }
       div(class="interp-box",
         tags$b("🚗 Ce que montre ce graphique :"), tags$br(),
         tags$p(sprintf(
-          "Les %s sont les plus fréquemment impliqués (%.1f%% des accidents), suivis des %s. Fréquence ≠ dangerosité : %s Ces véhicules exposent davantage leurs usagers en raison de leur masse ou vulnérabilité.",
+          "Catégorie la plus fréquemment impliquée : %s (%.1f%% des accidents), suivie de %s. Fréquence ≠ dangerosité : %s Les écarts de mortalité reflètent en partie la masse des véhicules et la vulnérabilité de leurs usagers.",
           tolower(top1$categorie_vehicule), pct_top1,
           tolower(top2$categorie_vehicule),
           danger_txt
@@ -785,7 +789,7 @@ server_dashboard <- function(id, app_data, app_filters) {
       div(class="interp-box",
         tags$b("🛣 Ce que montre ce graphique :"), tags$br(),
         tags$p(sprintf(
-          "Ce graphique montre le volume d’accidents (bleu) et les décès (rouge) par type de route. Les %s concentrent le plus d’accidents (%.1f%% du total) mais ne sont pas forcément les plus dangereux. C’est sur les %s que le taux de mortalité est le plus élevé (%.1f%% des accidents y sont mortels), en raison des vitesses pratiquées et de l’éloignement des secours.",
+          "Ce graphique montre le volume d’accidents (bleu) et les accidents mortels (rouge) par type de route. Type de route le plus fréquent : %s (%.1f%% des accidents), mais pas forcément le plus dangereux. Taux de mortalité le plus élevé : %s (%.1f%% des accidents y sont mortels), souvent associé aux vitesses pratiquées et à l’éloignement des secours.",
           tolower(top_vol$catr_label), pct_top,
           tolower(top_taux$catr_label), top_taux$taux
         ))

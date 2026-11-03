@@ -8,3 +8,6 @@ run_pipeline.R
 test_pipeline.R
 donnees/
 data_pipeline/
+.RData
+06_finalisation.R
+07_controle_coherence.R

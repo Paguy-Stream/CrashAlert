@@ -70,7 +70,7 @@ ui_facteurs <- function(id) {
         div(tags$label(class="fac-label", bs_icon("calendar3"), " Annees"),
             selectInput(ns("annees"), label=NULL, choices=NULL,
                         multiple=TRUE, width="160px")),
-        div(tags$label(class="fac-label", bs_icon("geo-alt"), " Region"),
+        div(tags$label(class="fac-label", bs_icon("geo-alt"), " Région"),
             selectInput(ns("regions"), label=NULL, choices=NULL,
                         multiple=TRUE, width="180px")),
         div(tags$label(class="fac-label", bs_icon("signpost-split"), " Département"),
@@ -87,45 +87,45 @@ ui_facteurs <- function(id) {
     div(class = "fac-content",
 
       # ── KPI facteurs ────────────────────────────────────────────────────────
-      div(class="section-title", bs_icon("exclamation-triangle-fill"), " Facteurs les plus meurtriers"),
+      div(class="section-title", bs_icon("exclamation-triangle-fill"), " Facteurs à plus forte mortalité"),
       layout_columns(
         col_widths=c(3,3,3,3), fill=FALSE,
-        value_box("Meteo la + meurtriere",
+        value_box("Météo : taux le plus élevé",
           textOutput(ns("kpi_meteo"), inline=TRUE),
           showcase=bs_icon("cloud-lightning-rain-fill"), theme="danger",
           p(class="mb-0 text-muted", style="font-size:11px;",
             textOutput(ns("kpi_meteo_sub"), inline=TRUE))),
-        value_box("Route la + meurtriere",
+        value_box("Route : taux le plus élevé",
           textOutput(ns("kpi_route"), inline=TRUE),
           showcase=bs_icon("signpost-fill"), theme="danger",
           p(class="mb-0 text-muted", style="font-size:11px;",
             textOutput(ns("kpi_route_sub"), inline=TRUE))),
-        value_box("Luminosite la + risquee",
+        value_box("Luminosité la + risquee",
           textOutput(ns("kpi_lum"), inline=TRUE),
           showcase=bs_icon("moon-fill"), theme="warning",
           p(class="mb-0 text-muted", style="font-size:11px;",
             textOutput(ns("kpi_lum_sub"), inline=TRUE))),
-        value_box("Collision la + meurtriere",
+        value_box("Collision : taux le plus élevé",
           textOutput(ns("kpi_col"), inline=TRUE),
           showcase=bs_icon("car-front-fill"), theme="warning",
           p(class="mb-0 text-muted", style="font-size:11px;",
             textOutput(ns("kpi_col_sub"), inline=TRUE)))
       ),
 
-      # ── Meteo & Luminosite ─────────────────────────────────────────────────
+      # ── Meteo & Luminosité ─────────────────────────────────────────────────
       div(class="section-title", bs_icon("cloud-rain-fill"), " Conditions environnementales"),
       layout_columns(
         col_widths=c(4,4,4),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("cloud-fill"), " Meteo — Taux mortalite")),
+          card_header(tagList(bs_icon("cloud-fill"), " Météo — Taux de mortalité")),
           card_body(plotlyOutput(ns("meteo_taux"), height="300px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("brightness-high-fill"), " Luminosite — Taux mortalite")),
+          card_header(tagList(bs_icon("brightness-high-fill"), " Luminosité — Taux de mortalité")),
           card_body(plotlyOutput(ns("lum_taux"), height="300px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("droplet-fill"), " Etat chaussee — Taux mortalite")),
+          card_header(tagList(bs_icon("droplet-fill"), " Etat chaussee — Taux de mortalité")),
           card_body(plotlyOutput(ns("surf_taux"), height="300px"))
         )
       ),
@@ -154,12 +154,12 @@ ui_facteurs <- function(id) {
         col_widths=c(6,6),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("moon-stars-fill"),
-                              " Nuit × etat chaussee — Taux mortalite")),
+                              " Nuit × etat chaussee — Taux de mortalité")),
           card_body(plotlyOutput(ns("nuit_surf"), height="280px"))
         ),
         card(full_screen=TRUE,
           card_header(tagList(bs_icon("signpost-2-fill"),
-                              " Type route × meteo — Taux mortalite")),
+                              " Type de route × météo — Taux de mortalité")),
           card_body(plotlyOutput(ns("route_meteo"), height="280px"))
         )
       ),
@@ -301,7 +301,7 @@ server_facteurs <- function(id, app_data) {
     })
 
     # ── Helper plot barres horizontales taux ──────────────────────────────────
-    .bar_taux <- function(d, titre_x = "Taux mortalite (%)") {
+    .bar_taux <- function(d, titre_x = "Taux de mortalité (%)") {
       if (nrow(d) == 0) return(plot_ly() |> layout(title="Aucune donnee"))
       d <- d |> arrange(taux)
       d <- d |> dplyr::mutate(.col = .taux_to_hex(taux))
@@ -323,7 +323,7 @@ server_facteurs <- function(id, app_data) {
       .bar_taux(.taux_var(filtered(), "atm_label", min_n=max(5, round(nrow(filtered())*0.01))))
     })
 
-    # ── Luminosite taux ───────────────────────────────────────────────────────
+    # ── Luminosité taux ───────────────────────────────────────────────────────
     output$lum_taux <- renderPlotly({
       req(nrow(filtered()) > 0)
       d <- .taux_var(filtered(), "lum_label", min_n=max(5, round(nrow(filtered())*0.01))) |>
@@ -449,7 +449,7 @@ server_facteurs <- function(id, app_data) {
                            text=~paste0(taux,"%"), textposition="outside")
       }
       p |> layout(barmode="group",
-                  xaxis=list(title="Taux mortalite (%)"),
+                  xaxis=list(title="Taux de mortalité (%)"),
                   yaxis=list(title="", categoryorder="array", categoryarray=surfs),
                   legend=list(orientation="h", y=-0.15),
                   paper_bgcolor="transparent", plot_bgcolor="transparent",
@@ -506,7 +506,7 @@ server_facteurs <- function(id, app_data) {
       }
       p |> layout(
         xaxis=list(title="", tickangle=-25),
-        yaxis=list(title="Taux mortalite (%)"),
+        yaxis=list(title="Taux de mortalité (%)"),
         legend=list(orientation="h", y=-0.35, font=list(size=10)),
         paper_bgcolor="transparent", plot_bgcolor="transparent",
         margin=list(t=5, b=100))
@@ -545,26 +545,26 @@ server_facteurs <- function(id, app_data) {
       div(class="insight-box",
         tags$ul(style="margin:0;padding-left:20px;line-height:2;",
           if (nrow(meteo_top)>0)
-            tags$li("La condition météo la plus meurtrière est ",
+            tags$li("Condition météo avec la part d’accidents mortels la plus élevée : ",
                     tags$b(meteo_top$val[1]), " avec ",
-                    tags$b(paste0(meteo_top$taux[1],"%")), " de taux mortalité"),
+                    tags$b(paste0(meteo_top$taux[1],"%")), " d’accidents mortels"),
           if (nrow(lum_top)>0)
             tags$li("Sans éclairage public la nuit : taux mortalité de ",
                     tags$b(paste0(t_nuit,"%")), " vs ",
                     tags$b(paste0(t_jour,"%")), " en plein jour"),
           if (nrow(surf_top)>0)
             tags$li("Chaussée ", tags$b(surf_top$val[1]),
-                    " est la plus meurtrière : ",
+                    " a la part d’accidents mortels la plus élevée : ",
                     tags$b(paste0(surf_top$taux[1],"%"))),
           if (nrow(route_top)>0)
             tags$li(tags$b(route_top$val[1]),
-                    " est le type de route le plus mortel (",
+                    " a la part d’accidents mortels la plus élevée (",
                     tags$b(paste0(route_top$taux[1],"%")), ")",
                     if (length(taux_route_nat)>0 && length(taux_voie_com)>0)
                       tags$span(" — Route nationale : ", tags$b(paste0(taux_route_nat,"%")),
                                 " vs Voie communale : ", tags$b(paste0(taux_voie_com,"%")))),
           if (nrow(col_top)>0)
-            tags$li("Le type de collision le plus meurtrier : ",
+            tags$li("Type de collision avec la part d’accidents mortels la plus élevée : ",
                     tags$b(col_top$val[1]), " — ",
                     tags$b(paste0(col_top$taux[1],"%")))
         )

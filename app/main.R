@@ -43,7 +43,7 @@ ui <- function(id) {
       ui_profile(ns("profile"))
     ),
     nav_panel(
-      title = tagList(bs_icon("clock-fill"), " Temporalite"),
+      title = tagList(bs_icon("clock-fill"), " Temporalité"),
       ui_heatmap(ns("heatmap"))
     ),
     nav_panel(
