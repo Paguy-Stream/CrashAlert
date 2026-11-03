@@ -1,6 +1,6 @@
 ---
 title: "Rapport accidentologie — `r params$region`"
-subtitle: "France 2015–2024 · CrashAlert v4.0"
+subtitle: "France 2015–2025 · CrashAlert v4.0"
 date: "`r format(Sys.Date(), '%d %B %Y')`"
 always_allow_html: true
 output:
@@ -40,7 +40,7 @@ acc <- params$accidents
 
 
 
-annee_label <- if(is.null(params$annee) || params$annee == "all") "2015–2024" else as.character(params$annee)
+annee_label <- if(is.null(params$annee) || params$annee == "all") "2015–2025" else as.character(params$annee)
 
 depts <- acc |> mutate(dep_nom=as.character(departement)) |>
   distinct(dep_nom) |> arrange(dep_nom) |> pull(dep_nom)
@@ -120,7 +120,7 @@ ggplot(evol,aes(x=annee)) +
   scale_x_continuous(breaks=evol$annee) +
   scale_y_continuous(name="Nb accidents",labels=comma_format(big.mark=" "),
     sec.axis=sec_axis(~./sf,name="Taux mortalité (%)")) +
-  labs(title=paste("Évolution 2015–2024 —",params$region),x=NULL) +
+  labs(title=paste("Évolution 2015–2025 —",params$region),x=NULL) +
   theme_minimal(base_size=11) +
   theme(plot.title=element_text(face="bold",color=BLEU_DARK,size=13),
         panel.grid.minor=element_blank(),

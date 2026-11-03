@@ -755,7 +755,7 @@ server_analyse <- function(id, app_data) {
       })
 
       p |> layout(
-        xaxis = list(title="Score composite de risque", range=c(0,100),
+        xaxis = list(title="Score structurel", range=c(0,100),
                      ticksuffix="", zeroline=FALSE),
         yaxis = list(title="Pente du taux de mortalit\u00e9 (pt/an)",
                      ticksuffix="", zeroline=FALSE),

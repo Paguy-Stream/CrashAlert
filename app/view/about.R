@@ -144,16 +144,16 @@ ui_about <- function(id) {
         div(class = "about-hero-icon", bs_icon("car-front-fill")),
         div(
           tags$h1(class = "about-hero-title",
-            "CrashAlert — Accidentologie routi\u00e8re en France (2015\u20132024)"),
+            "CrashAlert — Accidentologie routi\u00e8re en France (2015\u20132025)"),
           tags$p(class = "about-hero-sub",
-            "Exploration interactive de 564\u00a0198\u00a0accidents de la route issus de la base ",
+            "Exploration interactive de 619\u00a0291\u00a0accidents de la route issus de la base ",
             tags$b("BAAC"), " (Bulletin d\u2019Analyse des Accidents Corporels de la circulation). ",
             "Ce tableau de bord est publi\u00e9 sur ", tags$b("data.gouv.fr"),
             " dans le cadre d\u2019une d\u00e9marche open data."),
           div(style = "margin-top: 12px;",
-            span(class = "about-badge", bs_icon("calendar3"), " 2015\u20132024"),
-            span(class = "about-badge", bs_icon("geo-alt-fill"), " France m\u00e9tropolitaine + DOM-TOM"),
-            span(class = "about-badge", bs_icon("database-fill"), " 564\u00a0198 accidents"),
+            span(class = "about-badge", bs_icon("calendar3"), " 2015\u20132025"),
+            span(class = "about-badge", bs_icon("geo-alt-fill"), " M\u00e9tropole + outre-mer"),
+            span(class = "about-badge", bs_icon("database-fill"), " 619\u00a0291 accidents"),
             span(class = "about-badge", bs_icon("people-fill"), " Donn\u00e9es ONISR / data.gouv.fr")
           )
         )
@@ -179,7 +179,7 @@ ui_about <- function(id) {
               tags$b("o\u00f9, quand et comment"), " les accidents de la route surviennent en France, ",
               "d\u2019identifier les territoires et profils les plus \u00e0 risque, et de suivre l\u2019\u00e9volution dans le temps.", tags$br(), tags$br(),
               "Les donn\u00e9es proviennent du registre officiel BAAC tenu par l\u2019",
-              tags$b("Observatoire National Intermin\u00e9rist\u00e9riel de la S\u00e9curit\u00e9 Routi\u00e8re (ONISR)"),
+              tags$b("Observatoire National Interminist\u00e9riel de la S\u00e9curit\u00e9 Routi\u00e8re (ONISR)"),
               " et sont disponibles en open data sur ", tags$b("data.gouv.fr"), "."
             ),
 
@@ -192,9 +192,9 @@ ui_about <- function(id) {
                     "Vue synth\u00e9tique : indicateurs cl\u00e9s, r\u00e9partition par ann\u00e9e, cartographie rapide.")
               ),
               div(class = "onglet-card",
-                div(class = "onglet-card-title", bs_icon("map"), " Carte de risque"),
+                div(class = "onglet-card-title", bs_icon("map"), " Carte des risques"),
                 div(class = "onglet-card-desc",
-                    "Score de risque composite par d\u00e9partement. Filtrage par p\u00e9riode et type de route.")
+                    "Taux de mortalit\u00e9 et indice de surmortalit\u00e9 par d\u00e9partement, avec indication de fiabilit\u00e9 selon l\u2019effectif. Filtrage par p\u00e9riode et type de route.")
               ),
               div(class = "onglet-card",
                 div(class = "onglet-card-title", bs_icon("person-fill"), " Profil accidentologique"),
@@ -202,9 +202,9 @@ ui_about <- function(id) {
                     "\u00c9tude des victimes : \u00e2ge, sexe, type de v\u00e9hicule, gravit\u00e9 selon les profils.")
               ),
               div(class = "onglet-card",
-                div(class = "onglet-card-title", bs_icon("grid-3x3-gap-fill"), " Heatmap"),
+                div(class = "onglet-card-title", bs_icon("grid-3x3-gap-fill"), " Temporalit\u00e9"),
                 div(class = "onglet-card-desc",
-                    "Accidents selon l\u2019heure et le jour de la semaine. Visualisation des pics de sinistralité.")
+                    "Accidents selon l\u2019heure, le jour de la semaine et le mois. Visualisation des pics de sinistralité.")
               ),
               div(class = "onglet-card",
                 div(class = "onglet-card-title", bs_icon("bar-chart-fill"), " Facteurs de risque"),
@@ -214,7 +214,7 @@ ui_about <- function(id) {
               div(class = "onglet-card",
                 div(class = "onglet-card-title", bs_icon("graph-up-arrow"), " Statistiques approfondies"),
                 div(class = "onglet-card-desc",
-                    "Segmentation territoriale (k-means), score composite fond\u00e9 sur les corr\u00e9lations empiriques, ACM.")
+                    "Segmentation territoriale (k-means), score de risque structurel, ACM.")
               )
             ),
 
@@ -222,8 +222,8 @@ ui_about <- function(id) {
 
             div(class = "about-ok-box",
               tags$b(bs_icon("check-circle-fill"), " Ce qui est couvert :"), tags$br(),
-              "\u2022 Tous les accidents ", tags$b("corporels"), " enregistr\u00e9s en France entre 2015 et 2024 ", tags$br(),
-              "\u2022 France m\u00e9tropolitaine (96 d\u00e9partements) — les DOM-TOM sont exclus des analyses territoriales", tags$br(),
+              "\u2022 Tous les accidents ", tags$b("corporels"), " enregistr\u00e9s en France entre 2015 et 2025 ", tags$br(),
+              "\u2022 France m\u00e9tropolitaine (96 d\u00e9partements) — l\u2019outre-mer (11 territoires) est suivi s\u00e9par\u00e9ment, le score et la segmentation portent sur la m\u00e9tropole", tags$br(),
               "\u2022 Tous les modes de d\u00e9placement : voiture, deux-roues motoris\u00e9s, v\u00e9lo, pi\u00e9tons, poids lourds, tracteurs", tags$br(),
               "\u2022 Toutes les tranches d\u2019\u00e2ge, toutes les p\u00e9riodes (nuit/jour, weekend/semaine, saisons)"
             ),
@@ -236,9 +236,9 @@ ui_about <- function(id) {
             ),
 
             div(class = "stat-chips",
-              span(class = "stat-chip", bs_icon("calendar3"), "10 ann\u00e9es"),
+              span(class = "stat-chip", bs_icon("calendar3"), "11 ann\u00e9es"),
               span(class = "stat-chip", bs_icon("geo-alt"), "96 d\u00e9partements"),
-              span(class = "stat-chip", bs_icon("file-earmark-text"), "564\u00a0198 accidents"),
+              span(class = "stat-chip", bs_icon("file-earmark-text"), "619\u00a0291 accidents"),
               span(class = "stat-chip", bs_icon("person"), "Toutes victimes"),
               span(class = "stat-chip", bs_icon("car-front"), "Tous modes")
             )
@@ -262,27 +262,21 @@ ui_about <- function(id) {
               ". Chaque ligne repr\u00e9sente un accident corporel d\u00e9clar\u00e9 par les forces de l\u2019ordre.",
               tags$br(), tags$br(),
               "Les fichiers ont \u00e9t\u00e9 concat\u00e9n\u00e9s, nettoy\u00e9s (harmonisation des codes, recodage des modalit\u00e9s entre versions du formulaire) et enrichis de variables calcul\u00e9es (taux de mortalit\u00e9, tranches d\u2019\u00e2ge standardis\u00e9es, indicateur nuit/jour). ",
-              "Le fichier final contient ", tags$b("564\u00a0198 accidents"), " et ", tags$b("37 colonnes"), "."
+              "Le fichier final contient ", tags$b("619\u00a0291 accidents"), " dont ", tags$b("590\u00a0097"), " en m\u00e9tropole."
             ),
 
-            div(class = "about-section-title", bs_icon("calculator"), " Score de risque composite"),
+            div(class = "about-section-title", bs_icon("calculator"), " Score de risque structurel"),
 
             div(class = "about-info-box",
-              tags$b("Formule (version 2, fond\u00e9e sur les corr\u00e9lations empiriques) :"),
-              tags$pre(style="background:#fff;border:1px solid #dee2e6;border-radius:6px;padding:12px;font-size:12px;margin:10px 0 6px;",
-                "Score = taux_mortalit\u00e9      / max \u00d7 40\n",
-                "      + taux_route_dept     / max \u00d7 25\n",
-                "      + taux_sans_collision / max \u00d7 20\n",
-                "      + (100 - taux_jeunes) / 100 \u00d7 10\n",
-                "      + taux_nuit           / max \u00d7  5"
-              ),
-              "Les pond\u00e9rations refl\u00e8tent les corr\u00e9lations mesur\u00e9es sur les 96 d\u00e9partements m\u00e9tropolitains :", tags$br(),
-              "\u2022 ", tags$b("40\u00a0%\u00a0— mortalit\u00e9"), " : indicateur principal, objectif", tags$br(),
-              "\u2022 ", tags$b("25\u00a0%\u00a0— route d\u00e9partementale"), " : corr\u00e9lation R\u00b2\u00a0=\u00a026\u00a0% avec la mortalit\u00e9 d\u00e9partementale", tags$br(),
-              "\u2022 ", tags$b("20\u00a0%\u00a0— accidents sans tiers"), " : proxy de l\u2019isolement et des sorties de route (R\u00b2\u00a0=\u00a020\u00a0%)", tags$br(),
-              "\u2022 ", tags$b("10\u00a0%\u00a0— proportion de seniors"), " : profil 75+ ans = taux de mortalit\u00e9 le plus \u00e9lev\u00e9", tags$br(),
-              "\u2022 ", tags$b("5\u00a0%\u00a0— accidents nocturnes"), " : accessibilit\u00e9 des secours", tags$br(),
-              "\u2022 ", tags$b("M\u00e9t\u00e9o supprim\u00e9e"), " : R\u00b2\u00a0=\u00a00,3\u00a0% avec la mortalit\u00e9 d\u00e9partementale — non discriminant"
+              tags$b("M\u00e9thode du score structurel :"), tags$br(),
+              "Moyenne simple de 4 parts standardis\u00e9es (z-scores), ramen\u00e9e sur 0\u2013100 : ",
+              tags$b("routes d\u00e9partementales"), ", ", tags$b("accidents sans collision (sorties de route)"), ", ",
+              tags$b("nuit sans \u00e9clairage public"), " et ", tags$b("hors agglom\u00e9ration"), ".", tags$br(), tags$br(),
+              "\u2022 Poids \u00e9gaux, sans optimisation sur la mortalit\u00e9", tags$br(),
+              "\u2022 Variables et sens du risque choisis sur un crit\u00e8re conceptuel (caract\u00e9ristiques du territoire, pas des usagers), avant de calculer la corr\u00e9lation avec la mortalit\u00e9", tags$br(),
+              "\u2022 ", tags$b("La mortalit\u00e9 n\u2019entre pas dans le score"), " : elle sert uniquement \u00e0 le valider (Pearson, Spearman) sur les 96 d\u00e9partements m\u00e9tropolitains", tags$br(),
+              "\u2022 Les quatre variables sont corr\u00e9l\u00e9es entre elles : elles mesurent surtout une m\u00eame dimension", tags$br(),
+              "\u2022 Association descriptive entre d\u00e9partements, non causale. Les valeurs de validation (r, R\u00b2) sont affich\u00e9es dans l\u2019onglet Statistiques approfondies."
             ),
 
             div(class = "about-section-title", bs_icon("diagram-3-fill"), " Segmentation territoriale (clustering k-means)"),
@@ -290,10 +284,9 @@ ui_about <- function(id) {
             div(class = "about-info-box",
               "L\u2019algorithme k-means regroupe automatiquement les 96 d\u00e9partements en profils similaires, ",
               "sans imposer a priori une d\u00e9finition de \u00ab\u00a0rural\u00a0\u00bb ou \u00ab\u00a0urbain\u00a0\u00bb.", tags$br(), tags$br(),
-              "\u2022 Variables utilis\u00e9es : taux de mortalit\u00e9, % nuit, % route d\u00e9partementale, % jeunes conducteurs, ",
-              "% accidents sans tiers, % weekend — toutes normalis\u00e9es.", tags$br(),
-              "\u2022 Nombre de clusters : k\u00a0=\u00a03 retenu apr\u00e8s validation par score silhouette (k\u00a0=\u00a02 optimal math\u00e9matiquement, ",
-              "k\u00a0=\u00a03 retenu pour la richesse interpr\u00e9tative).", tags$br(),
+              "\u2022 Variables utilis\u00e9es : les 4 variables standardis\u00e9es du score (routes d\u00e9partementales, sorties de route, nuit sans \u00e9clairage, hors agglom\u00e9ration). La mortalit\u00e9 n\u2019est pas utilis\u00e9e pour former les groupes.", tags$br(),
+              "\u2022 Nombre de clusters : k\u00a0=\u00a03 conserv\u00e9 pour l\u2019interpr\u00e9tation (k\u00a0=\u00a02 est optimal math\u00e9matiquement selon la silhouette, ",
+              "les groupes d\u00e9coupent un gradient continu).", tags$br(),
               "\u2022 Initialisation : 25 tirages al\u00e9atoires, seed\u00a042 — r\u00e9sultats stables.",
               tags$br(), tags$br(),
               tags$em(style = "color:#7f8c8d;font-size:12px;",
@@ -307,9 +300,9 @@ ui_about <- function(id) {
             div(class = "about-info-box",
               "L\u2019ACM est une m\u00e9thode statistique qui visualise les associations entre variables cat\u00e9gorielles. ",
               "Elle r\u00e9pond \u00e0 la question : \u00ab\u00a0quels profils d\u2019usager, de v\u00e9hicule et de contexte ont tendance \u00e0 se retrouver dans les m\u00eames accidents\u00a0?\u00a0\u00bb", tags$br(), tags$br(),
-              "\u2022 \u00c9chantillon : 20\u00a0000 accidents stratifi\u00e9s (seed\u00a0=\u00a0123)", tags$br(),
+              "\u2022 \u00c9chantillon : 20\u00a0000 accidents stratifi\u00e9s par ann\u00e9e (seed\u00a0=\u00a0123), tir\u00e9s parmi les 562\u00a0043 accidents sans donn\u00e9e manquante sur ces variables", tags$br(),
               "\u2022 Variables actives : tranche d\u2019\u00e2ge, sexe, cat\u00e9gorie de v\u00e9hicule, m\u00e9t\u00e9o, luminosit\u00e9, type de route", tags$br(),
-              "\u2022 2 axes affich\u00e9s sur 8 calcul\u00e9s (12,8\u00a0% de la variabilit\u00e9 totale — normal en ACM)", tags$br(), tags$br(),
+              "\u2022 2 axes affich\u00e9s sur 23 calcul\u00e9s (11,9\u00a0% de la variabilit\u00e9 totale — normal en ACM)", tags$br(), tags$br(),
               tags$em(style = "color:#7f8c8d;font-size:12px;",
                 bs_icon("exclamation-circle"),
                 " L\u2019ACM d\u00e9crit des associations entre profils, pas des niveaux de gravit\u00e9. ",
@@ -327,7 +320,7 @@ ui_about <- function(id) {
               "Seuls les accidents d\u00e9clar\u00e9s aux forces de l\u2019ordre sont enregistr\u00e9s. Certains accidents l\u00e9gers, ",
               "notamment impliquant des cyclistes ou des pi\u00e9tons, peuvent \u00eatre sous-repr\u00e9sent\u00e9s.", tags$br(), tags$br(),
               tags$b("3. Changements de codage entre ann\u00e9es"), tags$br(),
-              "Le formulaire BAAC a \u00e9volu\u00e9 plusieurs fois entre 2005 et 2024. Des harmonisations ont \u00e9t\u00e9 appliqu\u00e9es, ",
+              "Le formulaire BAAC a \u00e9volu\u00e9 plusieurs fois entre 2005 et 2025. Des harmonisations ont \u00e9t\u00e9 appliqu\u00e9es, ",
               "mais de l\u00e9g\u00e8res discontinuit\u00e9s restent possibles, notamment pour certaines modalit\u00e9s de type de route.", tags$br(), tags$br(),
               tags$b("4. Les associations ne sont pas des causalit\u00e9s"), tags$br(),
               "Ce tableau de bord d\u00e9crit des corr\u00e9lations et des profils statistiques. ",
@@ -381,7 +374,7 @@ ui_about <- function(id) {
                   tags$tr(tags$td(tags$code("an")),
                     tags$td("Ann\u00e9e"),
                     tags$td(span(class="var-cat baac", "Source BAAC")),
-                    tags$td("Ann\u00e9e de survenue (2015\u20132024).")),
+                    tags$td("Ann\u00e9e de survenue (2015\u20132025).")),
                   tags$tr(tags$td(tags$code("mois")),
                     tags$td("Mois"),
                     tags$td(span(class="var-cat baac", "Source BAAC")),
@@ -614,9 +607,9 @@ ui_about <- function(id) {
                     "Proportion d\u2019accidents ayant caus\u00e9 au moins un d\u00e9c\u00e8s. ",
                     "Exemple\u00a0: un taux de 8\u00a0% signifie que 8 accidents sur 100 ont \u00e9t\u00e9 mortels.")),
               div(class = "glossaire-item",
-                div(class = "glossaire-term", "Score de risque composite"),
+                div(class = "glossaire-term", "Score de risque structurel"),
                 div(class = "glossaire-def",
-                    "Indicateur synth\u00e9tique (0\u2013100) combinant plusieurs facteurs pond\u00e9r\u00e9s par leur corr\u00e9lation avec la mortalit\u00e9. ",
+                    "Indicateur synth\u00e9tique (0\u2013100) moyenne de quatre parts standardis\u00e9es li\u00e9es au territoire, sans la mortalit\u00e9 qui sert \u00e0 le valider. ",
                     "Un score de 80 ne signifie pas 80\u00a0% de risque d\u2019accident, mais que ce d\u00e9partement est ",
                     "parmi les plus expos\u00e9s de la base.")),
               div(class = "glossaire-item",
@@ -676,7 +669,7 @@ ui_about <- function(id) {
               div(class = "glossaire-item",
                 div(class = "glossaire-term", "ONISR"),
                 div(class = "glossaire-def",
-                    "Observatoire National Intermin\u00e9rist\u00e9riel de la S\u00e9curit\u00e9 Routi\u00e8re. Organisme officiel charg\u00e9 de collecter, ",
+                    "Observatoire National Interminist\u00e9riel de la S\u00e9curit\u00e9 Routi\u00e8re. Organisme officiel charg\u00e9 de collecter, ",
                     "analyser et publier les statistiques d\u2019accidents en France.")),
               div(class = "glossaire-item",
                 div(class = "glossaire-term", "Accident corporel"),
@@ -725,7 +718,7 @@ ui_about <- function(id) {
 
             div(class = "about-section-title", bs_icon("file-earmark-check-fill"), " Sources de donn\u00e9es"),
             div(class = "about-info-box",
-              tags$b(bs_icon("database"), " Base BAAC (2015\u20132024)"), tags$br(),
+              tags$b(bs_icon("database"), " Base BAAC (2015\u20132025)"), tags$br(),
               "Publi\u00e9e par le Minist\u00e8re de l\u2019Int\u00e9rieur / ONISR sous ",
               tags$b("Licence Ouverte Etalab v2.0."), tags$br(),
               "La base source officielle est t\u00e9l\u00e9chargeable directement depuis data.gouv.fr \u2014 ",
@@ -748,7 +741,7 @@ ui_about <- function(id) {
               tags$em(style = "color:#7f8c8d;font-size:12px;",
                 bs_icon("clock"),
                 " Les donn\u00e9es BAAC sont mises \u00e0 jour annuellement par l\u2019ONISR. ",
-                "Derni\u00e8re ann\u00e9e int\u00e9gr\u00e9e dans cette version : 2024.")
+                "Derni\u00e8re ann\u00e9e int\u00e9gr\u00e9e dans cette version : 2025.")
             ),
 
             div(class = "about-section-title", bs_icon("tools"), " Stack technique"),
