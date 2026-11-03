@@ -7,6 +7,8 @@
 suppressPackageStartupMessages({ library(dplyr); library(FactoMineR) })
 dir_out <- "data_propre"; N <- 20000; graine <- 123
 db <- readRDS(file.path(dir_out, "accidents_dashboard.rds"))
+db <- db |> filter(!grepl("^9[78]", dep))   # métropole seule
+cat("Accidents métropole :", format(nrow(db), big.mark = " "), "\n")
 
 d <- db |> transmute(
   annee,

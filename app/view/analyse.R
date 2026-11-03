@@ -23,6 +23,7 @@ box::use(
   cluster[silhouette],
   FactoMineR[MCA],
   stats[kmeans, setNames, dist, lm, coef, fitted, cor, median, quantile, loess, predict],
+  app/logic/acm_texte[acm_texte],
 )
 
 # Codes DOM-TOM
@@ -244,35 +245,7 @@ ui_analyse <- function(id) {
         tags$b("L\u2019ACM d\u00e9crit des profils, pas des niveaux de gravit\u00e9.")
       ),
 
-      div(class="resultat-box",
-        tags$b(bs_icon("graph-up"), " Ce que les donn\u00e9es nous disent :"), tags$br(),
-        tags$b("Axe 1 (horizontal) : hors agglomération rapide vs milieu urbain."),
-        " Les modalités qui contribuent le plus à cet axe sont ",
-        tags$b("Nuit sans éclairage (21,8 %), Autoroute (17,6 %) et Poids lourd (9,5 %)"),
-        " à droite, opposées à ",
-        tags$b("Urbaine (15,3 %) et Cyclomoteur (8,3 %)"), " à gauche. ",
-        "Ce sont des contextes structurellement différents : routes rapides et non éclairées d'un côté, voirie urbaine et deux-roues légers de l'autre.",
-        tags$br(), tags$br(),
-        tags$b("Axe 2 (vertical) : seniors et femmes vs jeunes et hommes."),
-        " Cet axe est structuré par ",
-        tags$b("65 ans et plus (17,3 %) et Féminin (14,7 %)"),
-        " en haut, opposés à ",
-        tags$b("Masculin (9,9 %), Nuit avec éclairage (9,3 %), Cyclomoteur (6,7 %) et 18-24 ans (5,0 %)"),
-        " en bas.",
-        tags$br(), tags$br(),
-        tags$b("Points notables :"), tags$br(),
-        "• ", tags$b("Poids lourd"), " est la modalité la plus à droite (Dim1 = 1,92), proche de Nuit sans éclairage et d'Autoroute : ces contextes sont souvent associés dans l'échantillon. ",
-        tags$em("L'ACM ne dit rien de leur mortalité ; voir l'onglet Facteurs de risque."), tags$br(),
-        "• ", tags$b("Vélo et Cyclomoteur sont opposés sur l'axe vertical"),
-        " : le vélo (Dim2 = 1,51) est associé aux seniors, le cyclomoteur (Dim2 = -0,91) aux plus jeunes.", tags$br(),
-        "• ", tags$b("Les EDP motorisés"), " (Dim1 = -1,61) et le vélo à assistance électrique (Dim1 = -1,50) sont parmi les profils les plus à gauche, c'est-à-dire les plus urbains.",
-        tags$br(), tags$br(),
-        tags$em(style="color:#7f8c8d;font-size:12px;",
-          bs_icon("info-circle"),
-          " Note : l\u2019ACM identifie des associations entre contextes d\u2019accidents. ",
-          "Pour la mortalit\u00e9 par profil, croiser avec les onglets ",
-          tags$b("Profil accidentologique"), " et ", tags$b("Facteurs de risque"), ".")
-      ),
+      uiOutput(ns("resultat_acm")),
 
       tags$div(class="mt-3"),
 
@@ -1000,6 +973,8 @@ server_analyse <- function(id, app_data) {
 
     # ── ACM ───────────────────────────────────────────────────────────────────
     acm_result <- reactive({ app_data$acm_result })
+
+    output$resultat_acm <- renderUI({ acm_texte(acm_result()$res) })
 
     output$acm_biplot <- renderPlotly({
       acm <- acm_result()
