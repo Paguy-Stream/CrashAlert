@@ -612,7 +612,7 @@ server_dashboard <- function(id, app_data, app_filters) {
         layout(barmode="overlay",
                xaxis=list(title="", tickangle=-25),
                yaxis=list(title="Nb accidents"),
-               legend=list(orientation="h",y=-0.4),
+               legend=list(x=0.02, y=0.98, xanchor="left", yanchor="top", bgcolor="rgba(255,255,255,0.75)"),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
                margin=list(t=5,b=90)) |>
         plotly::config(displayModeBar=FALSE)

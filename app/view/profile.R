@@ -183,15 +183,15 @@ ui_profile <- function(id) {
         )
       ),
 
-      div(class="section-title", bs_icon("car-front-fill"), " Vehicule & Securite"),
+      div(class="section-title", bs_icon("car-front-fill"), " V\u00e9hicule & S\u00e9curit\u00e9"),
       layout_columns(
         col_widths=c(6,6),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("car-front-fill"), " Vehicule x gravite")),
+          card_header(tagList(bs_icon("car-front-fill"), " V\u00e9hicule x gravit\u00e9 (% des accidents de la cat\u00e9gorie)")),
           card_body(plotlyOutput(ns("vehicule_gravite"), height="320px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("shield-check"), " Equipement securite")),
+          card_header(tagList(bs_icon("shield-check"), " \u00c9quipement s\u00e9curit\u00e9")),
           card_body(plotlyOutput(ns("secu"), height="320px"))
         )
       ),
@@ -527,7 +527,7 @@ server_profile <- function(id, app_data) {
       }
       p <- plotly::event_register(p, "plotly_click")
       p |> layout(barmode="stack",
-                  xaxis=list(title="% accidents",range=c(0,100)),
+                  xaxis=list(title="",range=c(0,100)),
                   yaxis=list(title=""),
                   legend=list(orientation="h",y=-0.15),
                   paper_bgcolor="transparent", plot_bgcolor="transparent",
@@ -537,13 +537,13 @@ server_profile <- function(id, app_data) {
     output$secu <- renderPlotly({
       req(nrow(filtered()) > 0)
       codes_secu <- c(
-        "0"="Non renseigné","1"="Ceinture portee","2"="Casque porte",
+        "0"="Non renseigné","1"="Ceinture port\u00e9e","2"="Casque port\u00e9",
         "3"="Dispos. enfant","4"="Gilet refl.",
-        "8"="Non determine","9"="Autre",
-        "11"="Ceinture porte","12"="Ceinture non portee",
-        "13"="Casque porte","21"="Casque non porte",
-        "22"="Dispos. enfant porte","23"="Dispos. enfant non porte",
-        "91"="Gilet porte","92"="Gilet non porte","93"="Autre porte"
+        "-1"="Non renseign\u00e9","8"="Non d\u00e9termin\u00e9","9"="Autre",
+        "11"="Ceinture port\u00e9e","12"="Ceinture non port\u00e9e",
+        "13"="Casque port\u00e9","21"="Casque non port\u00e9",
+        "22"="Dispos. enfant port\u00e9","23"="Dispos. enfant non port\u00e9",
+        "91"="Gilet port\u00e9","92"="Gilet non port\u00e9","93"="Autre port\u00e9"
       )
       d <- filtered() |>
         filter(!is.na(secu_principal)) |>
@@ -590,9 +590,9 @@ server_profile <- function(id, app_data) {
         tags$ul(style="margin:0;padding-left:20px;line-height:2;",
           tags$li(tags$b(paste0(pct_h,"%")),
                   " des accidents impliquent un conducteur masculin"),
-          tags$li("Les ", tags$b("18-34 ans"), " representent ",
+          tags$li("Les ", tags$b("18-34 ans"), " repr\u00e9sentent ",
                   tags$b(paste0(pct_jeune,"%")),
-                  " des accidents — tranche la plus surrepresentee"),
+                  " des accidents — tranche la plus surrepr\u00e9sent\u00e9e"),
           tags$li("Les ", tags$b(age_mort$age),
                   " ont le taux de mortalité le plus élevé : ",
                   tags$b(paste0(age_mort$taux,"%"))),
@@ -729,13 +729,13 @@ server_profile <- function(id, app_data) {
       } else if (trigger$source == "secu") {
         secu_sel <- trigger$key
         codes_secu_map <- c(
-          "0"="Non renseigné","1"="Ceinture portee","2"="Casque porte",
+          "0"="Non renseigné","1"="Ceinture port\u00e9e","2"="Casque port\u00e9",
           "3"="Dispos. enfant","4"="Gilet refl.",
-          "8"="Non determine","9"="Autre",
-          "11"="Ceinture porte","12"="Ceinture non portee",
-          "13"="Casque porte","21"="Casque non porte",
-          "22"="Dispos. enfant porte","23"="Dispos. enfant non porte",
-          "91"="Gilet porte","92"="Gilet non porte","93"="Autre porte")
+          "-1"="Non renseign\u00e9","8"="Non d\u00e9termin\u00e9","9"="Autre",
+          "11"="Ceinture port\u00e9e","12"="Ceinture non port\u00e9e",
+          "13"="Casque port\u00e9","21"="Casque non port\u00e9",
+          "22"="Dispos. enfant port\u00e9","23"="Dispos. enfant non port\u00e9",
+          "91"="Gilet port\u00e9","92"="Gilet non port\u00e9","93"="Autre port\u00e9")
         d_secu <- d |>
           dplyr::filter(!is.na(secu_principal)) |>
           dplyr::mutate(sc=as.character(secu_principal),

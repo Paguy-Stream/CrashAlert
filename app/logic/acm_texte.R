@@ -6,9 +6,9 @@ box::use(
   utils[head],
 )
 
-.libelle <- c("Nuit sans eclairage" = "Nuit sans \u00e9clairage",
-              "Nuit avec eclairage" = "Nuit avec \u00e9clairage",
-              "Perturbee"           = "Perturb\u00e9e")
+.libelle <- c("Nuit sans \u00e9clairage" = "Nuit sans \u00e9clairage",
+              "Nuit avec \u00e9clairage" = "Nuit avec \u00e9clairage",
+              "Perturb\u00e9e"           = "Perturb\u00e9e")
 .nom  <- function(x) ifelse(x %in% names(.libelle), unname(.libelle[x]), x)
 .pct  <- function(x) paste0(formatC(x, format = "f", digits = 1, decimal.mark = ","), "\u00a0%")
 .num  <- function(x) formatC(x, format = "f", digits = 2, decimal.mark = ",")
@@ -16,7 +16,7 @@ box::use(
 .joindre <- function(v) if (length(v) < 2) v else paste(paste(v[-length(v)], collapse = ", "), "et", v[length(v)])
 
 #' @export
-acm_texte <- function(res, ancre1 = "Nuit sans eclairage", ancre2 = "65 ans et plus") {
+acm_texte <- function(res, ancre1 = "Nuit sans \u00e9clairage", ancre2 = "65 ans et plus") {
   co <- res$var$coord[, 1:2, drop = FALSE]; ct <- res$var$contrib[, 1:2, drop = FALSE]
   if (!all(c(ancre1, ancre2) %in% rownames(co))) return(NULL)
   x  <- setNames(co[, 1], rownames(co)); y  <- setNames(co[, 2], rownames(co))

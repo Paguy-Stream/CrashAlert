@@ -203,7 +203,7 @@ ui_analyse <- function(id) {
       div(class="methodo-box", style="margin-bottom:16px;",
         tags$b(bs_icon("graph-up"), " Méthodologie :"), tags$br(),
         "ACM sur échantillon stratifié par année de 20 000 accidents métropolitains. Variables actives : ",
-        tags$b("tranche d\u2019\u00e2ge, sexe, cat\u00e9gorie v\u00e9hicule, m\u00e9t\u00e9o, luminosit\u00e9, type de route."),
+        tags$b("tranche d\u2019\u00e2ge, sexe, cat\u00e9gorie principale de v\u00e9hicule, m\u00e9t\u00e9o, luminosit\u00e9, type de route."),
         " La gravité n'est pas une variable de l'ACM. ",
         "Les modalit\u00e9s proches sur le biplot sont statistiquement associ\u00e9es."
       ),
@@ -1054,7 +1054,8 @@ server_analyse <- function(id, app_data) {
               marker=list(color=c("#1b3a6b","#4a6fa5","#7eb3ff",
                                   rep("#dee2e6",5))),
               text=~paste0(round(`percentage of variance`,1),"%"),
-              textposition="outside") |>
+              textposition="outside", cliponaxis=FALSE) |>
+        layout(yaxis=list(range=c(0, max(eig$`percentage of variance`) * 1.25))) |>
         layout(xaxis=list(title=""),
                yaxis=list(title="% variance"),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
