@@ -432,7 +432,7 @@ server_dashboard <- function(id, app_data, app_filters) {
       couleurs <- c("Mortel"="#e74c3c","Grave"="#f39c12","Léger"="#27ae60")
       presents <- intersect(c("Mortel","Grave","Léger"), unique(d_geo$gravite_accident))
       pal <- colorFactor(palette=unname(couleurs[presents]),
-                         domain=presents, na.color="#6c757d")
+                         domain=presents, levels=presents, na.color="#6c757d")
       base |>
         addCircleMarkers(data=d_geo, lng=~long, lat=~lat, radius=4,
           color=~pal(gravite_accident), fillColor=~pal(gravite_accident),
