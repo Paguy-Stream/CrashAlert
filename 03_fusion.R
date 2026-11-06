@@ -69,11 +69,16 @@ log_msg(sprintf("Distribution gravité : %s",
 
 log_msg("Calcul du profil usager dominant par accident...")
 
+# Modalite la plus frequente ; en cas d'egalite, tirage au hasard (graine fixe, reproductible),
+# pour eviter le biais de l'ordre alphabetique
 .mode_val <- function(x) {
   x <- x[!is.na(x)]
   if (length(x) == 0) return(NA_character_)
-  names(sort(table(x), decreasing = TRUE))[1]
+  tab <- table(x)
+  gagnants <- names(tab)[tab == max(tab)]
+  if (length(gagnants) == 1) gagnants else sample(gagnants, 1)
 }
+set.seed(42)
 
 profil_usager <- usagers |>
   left_join(

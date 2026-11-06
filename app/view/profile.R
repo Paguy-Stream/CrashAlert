@@ -178,7 +178,7 @@ ui_profile <- function(id) {
           card_body(plotlyOutput(ns("age_mortalite"), height="280px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("person-fill-exclamation"), " Role dans l accident")),
+          card_header(tagList(bs_icon("person-fill-exclamation"), " Rôle du premier usager enregistré")),
           card_body(plotlyOutput(ns("catu_pie"), height="280px"))
         )
       ),
@@ -433,8 +433,7 @@ server_profile <- function(id, app_data) {
 
     output$age_mortalite <- renderPlotly({
       req(nrow(filtered_all()) > 0)
-      ordre_age <- c("0-17 ans","18-24 ans","25-34 ans","35-44 ans",
-                     "45-54 ans","55-64 ans","65-74 ans","65 ans et plus")
+      ordre_age <- c("Moins de 18 ans","18-24 ans","25-34 ans","35-49 ans","50-64 ans","65 ans et plus")
 
       # Deux courbes : Homme vs Femme — taux mortalité par tranche d'âge
       d <- filtered_all() |>
@@ -490,11 +489,11 @@ server_profile <- function(id, app_data) {
 
       p_catu <- plot_ly(d, labels=~catu, values=~n, type="pie", hole=0.4, source="catu_pie",
         marker=list(colors=c("#1b3a6b","#4a6fa5","#7eb3ff","#b8d4ff")),
-        textinfo="label+percent")
+        textinfo="label+percent", textposition="inside")
       p_catu <- plotly::event_register(p_catu, "plotly_click")
       p_catu |>
         layout(showlegend=TRUE, paper_bgcolor="transparent",
-               plot_bgcolor="transparent", margin=list(t=5,b=5)) |> plotly::config(displayModeBar=FALSE)
+               plot_bgcolor="transparent", margin=list(t=20,b=20), uniformtext=list(minsize=11, mode="hide")) |> plotly::config(displayModeBar=FALSE)
     })
 
     output$vehicule_gravite <- renderPlotly({
@@ -589,10 +588,10 @@ server_profile <- function(id, app_data) {
       div(class="insight-box",
         tags$ul(style="margin:0;padding-left:20px;line-height:2;",
           tags$li(tags$b(paste0(pct_h,"%")),
-                  " des accidents impliquent un conducteur masculin"),
-          tags$li("Les ", tags$b("18-34 ans"), " repr\u00e9sentent ",
-                  tags$b(paste0(pct_jeune,"%")),
-                  " des accidents — tranche la plus surrepr\u00e9sent\u00e9e"),
+                  " des accidents ont une majorit\u00e9 d\u2019usagers masculins"),
+          tags$li("Dans ", tags$b(paste0(pct_jeune,"%")),
+                  " des accidents, la tranche d\u2019\u00e2ge dominante est celle des ", tags$b("18-34 ans")),
+          # insight reformul\u00e9 : plus de comparaison \u00e0 une population de r\u00e9f\u00e9rence
           tags$li("Les ", tags$b(age_mort$age),
                   " ont le taux de mortalité le plus élevé : ",
                   tags$b(paste0(age_mort$taux,"%"))),
