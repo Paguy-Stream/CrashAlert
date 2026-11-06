@@ -67,7 +67,7 @@ ui_facteurs <- function(id) {
 
     div(class = "fac-topbar",
       div(class = "fac-filters",
-        div(tags$label(class="fac-label", bs_icon("calendar3"), " Annees"),
+        div(tags$label(class="fac-label", bs_icon("calendar3"), " Années"),
             selectInput(ns("annees"), label=NULL, choices=NULL,
                         multiple=TRUE, width="160px")),
         div(tags$label(class="fac-label", bs_icon("geo-alt"), " Région"),
@@ -262,7 +262,7 @@ server_facteurs <- function(id, app_data) {
     output$kpi_meteo_sub <- renderText({
       d <- .taux_var(filtered(), "atm_label")
       if (nrow(d)==0) return("")
-      paste0("taux mortalite : ", d$taux[1], "%")
+      paste0("taux mortalité : ", d$taux[1], "%")
     })
 
     output$kpi_route <- renderText({
@@ -273,7 +273,7 @@ server_facteurs <- function(id, app_data) {
     output$kpi_route_sub <- renderText({
       d <- .taux_var(filtered(), "catr_label")
       if (nrow(d)==0) return("")
-      paste0("taux mortalite : ", d$taux[1], "%")
+      paste0("taux mortalité : ", d$taux[1], "%")
     })
 
     output$kpi_lum <- renderText({
@@ -285,7 +285,7 @@ server_facteurs <- function(id, app_data) {
     output$kpi_lum_sub <- renderText({
       d <- .taux_var(filtered(), "lum_label")
       if (nrow(d)==0) return("")
-      paste0("taux mortalite : ", d$taux[1], "%")
+      paste0("taux mortalité : ", d$taux[1], "%")
     })
 
     output$kpi_col <- renderText({
@@ -297,7 +297,7 @@ server_facteurs <- function(id, app_data) {
     output$kpi_col_sub <- renderText({
       d <- .taux_var(filtered(), "col_label")
       if (nrow(d)==0) return("")
-      paste0("taux mortalite : ", d$taux[1], "%")
+      paste0("taux mortalité : ", d$taux[1], "%")
     })
 
     # ── Helper plot barres horizontales taux ──────────────────────────────────
@@ -309,7 +309,7 @@ server_facteurs <- function(id, app_data) {
               type="bar", orientation="h",
               marker=list(color=~.col),
               text=~paste0(taux,"%"), textposition="outside",
-              hovertemplate=~paste0(val,"<br>",taux,"% mortalite<br>",
+              hovertemplate=~paste0(val,"<br>",taux,"% mortalité<br>",
                                     format(n,big.mark="\u00a0")," accidents<extra></extra>")) |>
         layout(xaxis=list(title=titre_x),
                yaxis=list(title=""),
@@ -501,7 +501,7 @@ server_facteurs <- function(id, app_data) {
           x=~route, y=~taux, type="scatter", mode="lines+markers",
           name=m, line=list(color=col, width=2),
           marker=list(color=col, size=8),
-          text=~paste0(m," - ",route,"<br>",taux,"% mortalite"),
+          text=~paste0(m," - ",route,"<br>",taux,"% mortalité"),
           hoverinfo="text")
       }
       p |> layout(

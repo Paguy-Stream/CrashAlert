@@ -51,16 +51,16 @@ ui_heatmap <- function(id) {
 
     div(class = "hm-topbar",
       div(class = "hm-filters",
-        div(tags$label(class="hm-label", bs_icon("calendar3"), " Annees"),
+        div(tags$label(class="hm-label", bs_icon("calendar3"), " Années"),
             selectInput(ns("annees"), label=NULL, choices=NULL,
                         multiple=TRUE, width="160px")),
-        div(tags$label(class="hm-label", bs_icon("geo-alt"), " Region"),
+        div(tags$label(class="hm-label", bs_icon("geo-alt"), " Région"),
             selectInput(ns("regions"), label=NULL, choices=NULL,
                         multiple=TRUE, width="180px")),
         div(tags$label(class="hm-label", bs_icon("signpost-split"), " Département"),
             selectInput(ns("deps"), label=NULL, choices=NULL,
                         multiple=TRUE, width="180px")),
-        div(tags$label(class="hm-label", bs_icon("exclamation-triangle"), " Gravite"),
+        div(tags$label(class="hm-label", bs_icon("exclamation-triangle"), " Gravité"),
             selectInput(ns("gravite"), label=NULL,
                         choices=c("Mortel","Grave","L\u00e9ger"),
                         selected=NULL, multiple=TRUE, width="160px"))
@@ -95,10 +95,10 @@ ui_heatmap <- function(id) {
           showcase=bs_icon("sun-fill"), theme="warning",
           p(class="mb-0 text-muted", style="font-size:11px;",
             textOutput(ns("kpi_mois_sub"), inline=TRUE))),
-        value_box("Saison la + meurtriere",
+        value_box("Saison la + meurtrière",
           textOutput(ns("kpi_saison"), inline=TRUE),
           showcase=bs_icon("thermometer-half"), theme="primary",
-          p(class="mb-0 text-muted", style="font-size:11px;",
+          p(class="mb-0", style="font-size:11px;color:rgba(255,255,255,.85);",
             textOutput(ns("kpi_saison_sub"), inline=TRUE)))
       ),
 
@@ -120,7 +120,7 @@ ui_heatmap <- function(id) {
       tags$div(class="mt-3"),
 
       # ── Heatmap mois x jour ────────────────────────────────────────────────
-      div(class="section-title", bs_icon("calendar3"), " Saisonnalite"),
+      div(class="section-title", bs_icon("calendar3"), " Saisonnalité"),
       layout_columns(
         col_widths=c(8,4),
         card(full_screen=TRUE,
@@ -218,10 +218,10 @@ server_heatmap <- function(id, app_data) {
         weekend   = jour %in% c("samedi","dimanche"),
         moment_journee = dplyr::case_when(
           heure_num >= 6  & heure_num <  9  ~ "Matin (6h-9h)",
-          heure_num >= 9  & heure_num < 12  ~ "Matinee (9h-12h)",
+          heure_num >= 9  & heure_num < 12  ~ "Matinée (9h-12h)",
           heure_num >= 12 & heure_num < 14  ~ "Midi (12h-14h)",
-          heure_num >= 14 & heure_num < 17  ~ "Apres-midi (14h-17h)",
-          heure_num >= 17 & heure_num < 20  ~ "Soiree (17h-20h)",
+          heure_num >= 14 & heure_num < 17  ~ "Après-midi (14h-17h)",
+          heure_num >= 17 & heure_num < 20  ~ "Soirée (17h-20h)",
           heure_num >= 20 | heure_num <  0  ~ "Nuit (20h-0h)",
           heure_num >= 0  & heure_num <  6  ~ "Nuit profonde (0h-6h)",
           TRUE ~ "Inconnu"
@@ -252,17 +252,16 @@ server_heatmap <- function(id, app_data) {
     output$kpi_heure <- renderText({
       d <- filtered() |>
         group_by(heure) |>
-        summarise(taux=mean(gravite_accident=="Mortel",na.rm=TRUE), .groups="drop") |>
-        arrange(desc(taux)) |> slice_head(n=1)
+        summarise(taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1), n=n(), .groups="drop")
+      d <- (if (any(d$n >= 30)) d[d$n >= 30, ] else d) |> arrange(desc(taux)) |> slice_head(n=1)
       paste0(d$heure, "h00")
     })
     output$kpi_heure_sub <- renderText({
       d <- filtered() |>
         group_by(heure) |>
-        summarise(taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1),
-                  .groups="drop") |>
-        arrange(desc(taux)) |> slice_head(n=1)
-      paste0("taux mortalite : ", d$taux, "%")
+        summarise(taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1), n=n(), .groups="drop")
+      d <- (if (any(d$n >= 30)) d[d$n >= 30, ] else d) |> arrange(desc(taux)) |> slice_head(n=1)
+      paste0("taux mortalité : ", d$taux, "% sur ", d$n, " accidents")
     })
 
     output$kpi_jour <- renderText({
@@ -288,7 +287,9 @@ server_heatmap <- function(id, app_data) {
       d <- filtered() |>
         group_by(mois_num) |> summarise(n=n(), .groups="drop") |>
         arrange(desc(n)) |> slice_head(n=1)
-      paste0(format(d$n, big.mark="\u00a0"), " accidents en moyenne")
+      n_ans <- length(unique(filtered()$annee))
+      paste0(format(d$n, big.mark="\u00a0"), " accidents",
+        if (n_ans > 1) paste0(" sur ", n_ans, " ans (", format(round(d$n / n_ans), big.mark="\u00a0"), " par an)") else "")
     })
 
     output$kpi_saison <- renderText({
@@ -305,7 +306,7 @@ server_heatmap <- function(id, app_data) {
         summarise(taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1),
                   .groups="drop") |>
         arrange(desc(taux)) |> slice_head(n=1)
-      paste0("taux mortalite : ", d$taux, "%")
+      paste0("taux mortalité : ", d$taux, "%")
     })
 
     # ── Heatmap heure x jour ─────────────────────────────────────────────────
@@ -347,17 +348,17 @@ server_heatmap <- function(id, app_data) {
     # ── Titres dynamiques selon présence de mortels ───────────────────────────
     .titre_metrique <- function(raw, icon_name, label_base) {
       has_mortel <- "Mortel" %in% unique(as.character(raw$gravite_accident))
-      label <- if (has_mortel) paste(label_base, "(mortalite)")
-               else            paste(label_base, "(gravite)")
+      label <- if (has_mortel) paste(label_base, "(mortalité)")
+               else            paste(label_base, "(gravité)")
       tagList(bs_icon(icon_name), " ", label)
     }
 
     output$titre_moment_mortalite <- renderUI({
-      .titre_metrique(filtered(), "moon-fill", "Taux par moment de journee")
+      .titre_metrique(filtered(), "moon-fill", "Taux par moment de journée")
     })
 
     output$titre_heure_mortalite <- renderUI({
-      .titre_metrique(filtered(), "percent", "Taux par heure de la journee")
+      .titre_metrique(filtered(), "percent", "Taux par heure de la journée")
     })
 
     output$moment_mortalite <- renderPlotly({
@@ -372,14 +373,14 @@ server_heatmap <- function(id, app_data) {
 
       # Titre et métrique adaptés à la sélection
       if (has_mortel) {
-        metric_label <- "Taux mortalite (%)"
+        metric_label <- "Taux mortalité (%)"
         taux_fn <- function(grav) round(mean(grav == "Mortel", na.rm=TRUE) * 100, 2)
       } else if ("Grave" %in% grav_sel) {
-        metric_label <- "% accidents graves dans la periode"
+        metric_label <- "% accidents graves dans la période"
         taux_fn <- function(grav) round(mean(grav %in% c("Mortel","Grave"), na.rm=TRUE) * 100, 2)
       } else {
         # Léger seul : % accidents légers = complémentaire de grave+mortel
-        metric_label <- "% accidents legers dans la periode"
+        metric_label <- "% accidents légers dans la période"
         taux_fn <- function(grav) round(mean(grav == "Léger", na.rm=TRUE) * 100, 2)
       }
 
@@ -392,12 +393,12 @@ server_heatmap <- function(id, app_data) {
         x=~taux, y=~moment,
         type="bar", orientation="h",
         marker=list(color=~.col),
-        text=~paste0(taux,"%"), textposition="outside") |>
+        text=~paste0(taux,"%"), textposition="outside", cliponaxis=FALSE) |>
         layout(
-          xaxis=list(title=metric_label),
+          xaxis=list(title=metric_label, range=c(0, max(d$taux, na.rm=TRUE) * 1.25)),
           yaxis=list(title=""),
           paper_bgcolor="transparent", plot_bgcolor="transparent",
-          margin=list(t=5, r=50, l=170))
+          margin=list(t=5, r=70, l=170))
     })
 
     # ── Heatmap mois x jour ───────────────────────────────────────────────────
@@ -455,12 +456,12 @@ server_heatmap <- function(id, app_data) {
         marker=list(color=sapply(d$s, function(x)
           ifelse(x %in% names(couleurs_saison), couleurs_saison[x], "#95a5a6"))),
         text=~paste0(format(n,big.mark="\u00a0"),"<br>",taux,"% mort."),
-        textposition="outside") |>
+        textposition="outside", cliponaxis=FALSE) |>
         layout(
           xaxis=list(title=""),
-          yaxis=list(title="Nb accidents"),
+          yaxis=list(title="Nb accidents", range=c(0, max(d$n) * 1.3)),
           paper_bgcolor="transparent", plot_bgcolor="transparent",
-          margin=list(t=30))
+          margin=list(t=60))
     })
 
     # ── Courbe heure semaine vs weekend ───────────────────────────────────────
@@ -508,13 +509,13 @@ server_heatmap <- function(id, app_data) {
       has_mortel <- "Mortel" %in% grav_sel
 
       if (has_mortel) {
-        metric_label <- "Taux mortalite (%)"
+        metric_label <- "Taux mortalité (%)"
         taux_fn <- function(grav) round(mean(grav == "Mortel", na.rm=TRUE) * 100, 2)
       } else if ("Grave" %in% grav_sel) {
-        metric_label <- "% accidents graves dans la periode"
+        metric_label <- "% accidents graves dans la période"
         taux_fn <- function(grav) round(mean(grav %in% c("Mortel","Grave"), na.rm=TRUE) * 100, 2)
       } else {
-        metric_label <- "% accidents legers dans la periode"
+        metric_label <- "% accidents légers dans la période"
         taux_fn <- function(grav) round(mean(grav == "Léger", na.rm=TRUE) * 100, 2)
       }
 
@@ -547,7 +548,8 @@ server_heatmap <- function(id, app_data) {
       heure_mort <- d |>
         group_by(heure) |>
         summarise(taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1),
-                  n=n(), .groups="drop") |>
+                  n=n(), .groups="drop")
+      heure_mort <- (if (any(heure_mort$n >= 30)) heure_mort[heure_mort$n >= 30, ] else heure_mort) |>
         arrange(desc(taux)) |> slice_head(n=1)
 
       heure_peak <- d |>
@@ -579,22 +581,22 @@ server_heatmap <- function(id, app_data) {
 
       div(class="insight-box",
         tags$ul(style="margin:0;padding-left:20px;line-height:2;",
-          tags$li("L'heure la plus meurtriere est ",
+          tags$li("L'heure la plus meurtrière est ",
                   tags$b(paste0(heure_mort$heure,"h00")),
-                  " avec un taux de mortalite de ",
+                  " avec un taux de mortalité de ",
                   tags$b(paste0(heure_mort$taux,"%"))),
-          tags$li("Le pic d'accidents se situe a ",
+          tags$li("Le pic d'accidents se situe à ",
                   tags$b(paste0(heure_peak$heure,"h00")),
                   " — ", tags$b(format(heure_peak$n,big.mark="\u00a0")),
-                  " accidents sur la periode"),
+                  " accidents sur la période"),
           tags$li(tags$b(tools::toTitleCase(jour_peak$jour)),
-                  " est le jour le plus accidente"),
+                  " est le jour le plus accidenté"),
           tags$li("La nuit (20h-6h) est ",
                   tags$b(paste0(round(nuit_taux/max(jour_taux,0.1),1),"x")),
-                  " plus meurtriere que la journee (",
+                  " plus meurtrière que la journée (",
                   tags$b(paste0(nuit_taux,"%")), " vs ",
                   tags$b(paste0(jour_taux,"%")), ")"),
-          tags$li("Le weekend a un taux mortalite de ",
+          tags$li("Le weekend a un taux de mortalité de ",
                   tags$b(paste0(t_we,"%")), " vs ",
                   tags$b(paste0(t_sem,"%")), " en semaine")
         )

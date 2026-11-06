@@ -1,5 +1,6 @@
 # app/view/dashboard.R
 box::use(
+  app/logic/vehicules_impliques[par_categorie],
   shiny[NS, moduleServer, tags, tagList, icon, uiOutput, renderUI,
         textOutput, renderText, observeEvent, observe, reactive,
         eventReactive, updateSelectInput, actionButton, selectInput,
@@ -509,13 +510,9 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     # Véhicules
     output$vehicules <- renderPlotly({
-      d <- filtered() |>
-        filter(!is.na(categorie_vehicule),
-               as.character(categorie_vehicule) != "Non renseigné") |>
-        mutate(categorie_vehicule=as.character(categorie_vehicule)) |>
+      d <- par_categorie(filtered()) |>
         group_by(categorie_vehicule) |>
-        summarise(n=n(), mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
-                  .groups="drop") |>
+        summarise(n=sum(nb), mortels=sum(nb[grav=="Mortel"]), .groups="drop") |>
         mutate(taux=round(mortels/n*100,1)) |>
         arrange(desc(n)) |> slice_head(n=8)
       d <- d |> dplyr::arrange(n)
@@ -523,10 +520,10 @@ server_dashboard <- function(id, app_data, app_filters) {
               type="bar", marker=list(color="#1b3a6b"),
               name="Accidents",
               text=~paste0(taux,"% mortels"), textposition="outside", cliponaxis=FALSE) |>
-        layout(xaxis=list(title="", tickangle=-30),
+        layout(xaxis=list(title=list(text="Un accident est compté dans chaque catégorie impliquée", font=list(size=11)), tickangle=-30),
                yaxis=list(title="Nb accidents"),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
-               margin=list(t=35,b=80)) |>
+               margin=list(t=35,b=110)) |>
         plotly::config(displayModeBar=FALSE)
     })
 
@@ -702,21 +699,17 @@ server_dashboard <- function(id, app_data, app_filters) {
     })
 
     output$interp_vehicules <- renderUI({
-      d <- filtered() |>
-        dplyr::filter(!is.na(categorie_vehicule),
-                      as.character(categorie_vehicule) != "Non renseigné") |>
-        dplyr::mutate(categorie_vehicule=as.character(categorie_vehicule)) |>
+      d <- par_categorie(filtered()) |>
         dplyr::group_by(categorie_vehicule) |>
-        dplyr::summarise(n=dplyr::n(),
-                         mortels=sum(gravite_accident=="Mortel",na.rm=TRUE),
-                         .groups="drop") |>
+        dplyr::summarise(n=sum(nb), mortels=sum(nb[grav=="Mortel"]), .groups="drop") |>
         dplyr::mutate(taux=round(mortels/n*100,1)) |>
         dplyr::arrange(dplyr::desc(n))
+      n_acc <- sum(!is.na(filtered()$categories_impliquees))
       req(nrow(d) > 0)
       top1     <- d[1,]
       top2     <- d[2,]
       danger   <- d |> dplyr::filter(taux > 10) |> dplyr::arrange(dplyr::desc(taux))
-      pct_top1 <- round(top1$n / sum(d$n) * 100, 1)
+      pct_top1 <- round(top1$n / n_acc * 100, 1)
       danger_txt <- if (nrow(danger) >= 2) {
         paste0(nrow(danger), " catégories dépassent 10 % de mortalité : ",
           paste(sprintf("%s (%.1f%%)", tolower(danger$categorie_vehicule), danger$taux),
@@ -728,7 +721,7 @@ server_dashboard <- function(id, app_data, app_filters) {
       div(class="interp-box",
         tags$b("🚗 Ce que montre ce graphique :"), tags$br(),
         tags$p(sprintf(
-          "Catégorie la plus fréquemment impliquée : %s (%.1f%% des accidents), suivie de %s. Fréquence ≠ dangerosité : %s Les écarts de mortalité reflètent en partie la masse des véhicules et la vulnérabilité de leurs usagers.",
+          "Catégorie la plus fréquente : %s (%.1f%% des accidents impliquent au moins un véhicule de cette catégorie), suivie de %s. Un accident est compté dans chaque catégorie impliquée : les pourcentages ne se cumulent pas. Fréquence ≠ dangerosité : %s Les écarts de mortalité reflètent en partie la masse des véhicules et la vulnérabilité de leurs usagers.",
           tolower(top1$categorie_vehicule), pct_top1,
           tolower(top2$categorie_vehicule),
           danger_txt

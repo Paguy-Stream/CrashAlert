@@ -8,13 +8,13 @@ ref <- data.frame(annee = 2025, metropole = 3263, outre_mer = 252)
 # ── 1. Lecture des archives annuelles ─────────────────────────────────────────
 cols <- c("annee","mois","dep","departement","region","gravite_accident","nb_tues",
           "nb_blesses_hospitalises","nb_blesses_legers","nb_indemnes","agg","lum_label",
-          "col_label","catr_label","tranche_age","categorie_vehicule","jour_semaine")
+          "col_label","catr_label","tranche_age","categorie_vehicule","categories_impliquees","jour_semaine")
 fich <- list.files(dir_arch, "^accidents_\\d{4}\\.rds$", full.names = TRUE)
 base <- bind_rows(lapply(fich, function(f) {
   an <- as.integer(sub(".*accidents_(\\d{4})\\.rds$", "\\1", f))
   x <- readRDS(f)[, cols] |>
     mutate(across(c(dep, departement, region, gravite_accident, lum_label, col_label,
-                    catr_label, tranche_age, categorie_vehicule, jour_semaine), as.character),
+                    catr_label, tranche_age, categorie_vehicule, categories_impliquees, jour_semaine), as.character),
            annee = as.numeric(annee), mois = as.integer(mois), agg = as.integer(agg))
   stopifnot(all(x$annee == an)); x
 }))
@@ -110,7 +110,8 @@ feat <- bm |> group_by(dep_clean = dep) |>
     part_nuit_sans_eclairage = part(lum_label,  lum_label %in% c("Nuit sans éclairage public","Nuit avec éclairage public éteint")),
     part_hors_agglo          = mean(agg == 1, na.rm = TRUE) * 100,
     part_accidents_18_24     = mean(tranche_age == "18-24 ans", na.rm = TRUE) * 100,
-    part_accidents_2rm       = mean(categorie_vehicule %in% c("Cyclomoteur","Deux-roues motorisé"), na.rm = TRUE) * 100,
+    part_accidents_2rm       = mean((grepl("|Cyclomoteur|", categories_impliquees, fixed = TRUE) |
+                                         grepl("|Deux-roues motorisé|", categories_impliquees, fixed = TRUE))[!is.na(categories_impliquees)]) * 100,
     part_accidents_weekend   = mean(jour_semaine %in% c("samedi","dimanche"), na.rm = TRUE) * 100,
     taux_mortalite = mean(gravite_accident == "Mortel") * 100,   # validation uniquement
     .groups = "drop")

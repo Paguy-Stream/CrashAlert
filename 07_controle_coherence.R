@@ -120,6 +120,22 @@ if (!file.exists(f_ref)) {
   if (nrow(ec)) { cat("\nDépartements en écart :\n"); print(as.data.frame(ec), row.names = FALSE) }
 }
 
+# ── C. Catégories de véhicules impliquées (ONISR 2025, métropole) ──
+cat("\n== C. Catégories de véhicules impliquées (ONISR 2025) ==\n")
+f_cat <- "donnees/onisr_2025_categories.csv"
+if (!file.exists(f_cat) || is.na(col_tues) || !"categories_impliquees" %in% names(dm)) {
+  cat("Contrôle C ignoré : fichier de référence ou colonnes absents\n")
+} else {
+  rc  <- read.csv(f_cat, fileEncoding = "UTF-8", stringsAsFactors = FALSE)
+  m25 <- dm[dm$annee == 2025, ]; ci <- m25$categories_impliquees; tu <- m25[[col_tues]]
+  calc <- t(sapply(strsplit(rc$app, ";", fixed = TRUE), function(s) {
+    i <- Reduce(`|`, lapply(s, function(k) grepl(paste0("|", k, "|"), ci, fixed = TRUE)))
+    c(sum(i), sum(tu[i] > 0, na.rm = TRUE), sum(tu[i], na.rm = TRUE)) }))
+  chk("ONISR 2025 : accidents par catégorie de véhicule (11 catégories)", calc[, 1], rc$onisr_acc)
+  chk("ONISR 2025 : accidents mortels par catégorie (11 catégories)", calc[, 2], rc$onisr_mortels)
+  chk("ONISR 2025 : tués par catégorie (11 catégories)", calc[, 3], rc$onisr_tues)
+}
+
 out <- do.call(rbind, res)
 cat(sprintf("\nBilan : %d contrôles, %d OK, %d en écart\n", nrow(out), sum(out$ok), sum(!out$ok)))
 write.csv(out, sprintf("../controle_coherence_%s.csv", Sys.Date()), row.names = FALSE, fileEncoding = "UTF-8")

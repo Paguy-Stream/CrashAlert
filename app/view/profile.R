@@ -1,5 +1,6 @@
 # app/view/profile.R
 box::use(
+  app/logic/vehicules_impliques[par_categorie],
   shiny[NS, moduleServer, tags, tagList, uiOutput, renderUI,
         textOutput, renderText, HTML, div, span, h5, selectInput,
         updateSelectInput, observe, observeEvent, reactive, reactiveVal, req,
@@ -89,12 +90,12 @@ ui_profile <- function(id) {
     div(class = "profile-topbar",
       div(class = "profile-filters",
         div(
-          tags$label(class="pf-label", bs_icon("calendar3"), " Annees"),
+          tags$label(class="pf-label", bs_icon("calendar3"), " Années"),
           selectInput(ns("annees"), label=NULL, choices=NULL,
                       multiple=TRUE, width="160px")
         ),
         div(
-          tags$label(class="pf-label", bs_icon("geo-alt"), " Region"),
+          tags$label(class="pf-label", bs_icon("geo-alt"), " Région"),
           selectInput(ns("regions"), label=NULL, choices=NULL,
                       multiple=TRUE, width="180px")
         ),
@@ -104,7 +105,7 @@ ui_profile <- function(id) {
                       multiple=TRUE, width="180px")
         ),
         div(
-          tags$label(class="pf-label", bs_icon("exclamation-triangle"), " Gravite"),
+          tags$label(class="pf-label", bs_icon("exclamation-triangle"), " Gravité"),
           selectInput(ns("gravite"), label=NULL,
                       choices=c("Mortel","Grave","Léger"),
                       selected=NULL, multiple=TRUE, width="160px")
@@ -128,7 +129,7 @@ ui_profile <- function(id) {
         value_box("Conducteurs",
           textOutput(ns("kpi_conducteurs"), inline=TRUE),
           showcase=bs_icon("car-front-fill"), theme="primary",
-          p(class="mb-0 text-muted", style="font-size:11px;", "% des impliques")),
+          p(class="mb-0 text-muted", style="font-size:11px;", "% des accidents concernés")),
         value_box("Hommes",
           textOutput(ns("kpi_hommes"), inline=TRUE),
           showcase=bs_icon("gender-male"), theme="primary",
@@ -137,10 +138,10 @@ ui_profile <- function(id) {
           textOutput(ns("kpi_jeunes"), inline=TRUE),
           showcase=bs_icon("person-fill-exclamation"), theme="warning",
           p(class="mb-0 text-muted", style="font-size:11px;", "tranche la + accidentee")),
-        value_box("75+ ans mortalite",
+        value_box("75+ ans mortalité",
           textOutput(ns("kpi_seniors"), inline=TRUE),
           showcase=bs_icon("person-fill"), theme="danger",
-          p(class="mb-0 text-muted", style="font-size:11px;", "taux mortalite seniors"))
+          p(class="mb-0 text-muted", style="font-size:11px;", "taux mortalité seniors"))
       ),
       layout_columns(
         col_widths=c(6,6), fill=FALSE,
@@ -173,7 +174,7 @@ ui_profile <- function(id) {
       layout_columns(
         col_widths=c(6,6),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("percent"), " Taux mortalite par age")),
+          card_header(tagList(bs_icon("percent"), " Taux mortalité par âge")),
           card_body(plotlyOutput(ns("age_mortalite"), height="280px"))
         ),
         card(full_screen=TRUE,
@@ -318,10 +319,9 @@ server_profile <- function(id, app_data) {
     output$kpi_mode_title <- renderUI({
       d <- filtered()
       if (nrow(d) == 0) return(tags$span("Mode de deplacement"))
-      mode_top <- d |>
-        dplyr::filter(!is.na(categorie_vehicule)) |>
-        dplyr::count(categorie_vehicule, sort=TRUE) |>
-        dplyr::slice_head(n=1) |>
+      mode_top <- par_categorie(d) |>
+        dplyr::group_by(categorie_vehicule) |> dplyr::summarise(n=sum(nb), .groups="drop") |>
+        dplyr::arrange(dplyr::desc(n)) |> dplyr::slice_head(n=1) |>
         dplyr::pull(categorie_vehicule)
       if (length(mode_top)==0) return(tags$span("Mode de deplacement"))
       icone <- .mode_icons[mode_top]
@@ -332,12 +332,11 @@ server_profile <- function(id, app_data) {
     output$kpi_mode_pct <- renderText({
       d <- filtered()
       if (nrow(d) == 0) return("N/A")
-      mode_top <- d |>
-        dplyr::filter(!is.na(categorie_vehicule)) |>
-        dplyr::count(categorie_vehicule, sort=TRUE) |>
-        dplyr::slice_head(n=1)
+      mode_top <- par_categorie(d) |>
+        dplyr::group_by(categorie_vehicule) |> dplyr::summarise(n=sum(nb), .groups="drop") |>
+        dplyr::arrange(dplyr::desc(n)) |> dplyr::slice_head(n=1)
       if (nrow(mode_top) == 0) return("N/A")
-      pct <- round(mode_top$n / nrow(d) * 100, 1)
+      pct <- round(mode_top$n / sum(!is.na(d$categories_impliquees)) * 100, 1)
       paste0(pct, " %")
     })
 
@@ -462,20 +461,20 @@ server_profile <- function(id, app_data) {
                   name="Masculin",
                   line=list(color="#1b3a6b", width=2.5),
                   marker=list(size=8, color="#1b3a6b"),
-                  text=~paste0("Homme - ",age,"<br>",taux,"% mortalite"),
+                  text=~paste0("Homme - ",age,"<br>",taux,"% mortalité"),
                   hoverinfo="text") |>
         add_trace(data=d_f, x=~age, y=~taux,
                   type="scatter", mode="lines+markers",
                   name="Féminin",
                   line=list(color="#e74c3c", width=2.5),
                   marker=list(size=8, color="#e74c3c"),
-                  text=~paste0("Femme - ",age,"<br>",taux,"% mortalite"),
+                  text=~paste0("Femme - ",age,"<br>",taux,"% mortalité"),
                   hoverinfo="text") |> plotly::event_register("plotly_click") |>
         layout(
           xaxis=list(title="", tickangle=-30,
                      categoryorder="array",
                      categoryarray=ages_ord),
-          yaxis=list(title="Taux mortalite (%)"),
+          yaxis=list(title="Taux mortalité (%)"),
           legend=list(orientation="h", y=-0.25),
           paper_bgcolor="transparent", plot_bgcolor="transparent",
           margin=list(t=5, b=80)) |> plotly::config(displayModeBar=FALSE)
@@ -501,11 +500,8 @@ server_profile <- function(id, app_data) {
     output$vehicule_gravite <- renderPlotly({
       d <- filtered()
       req(nrow(d) > 0)
-      d <- d |>
-        filter(!is.na(categorie_vehicule),
-               as.character(categorie_vehicule)!="Non renseigné") |>
-        mutate(veh=as.character(categorie_vehicule), grav=as.character(gravite_accident)) |>
-        group_by(veh,grav) |> summarise(n=n(),.groups="drop") |>
+      d <- par_categorie(d) |>
+        group_by(veh=categorie_vehicule, grav) |> summarise(n=sum(nb), .groups="drop") |>
         group_by(veh) |> mutate(pct=round(n/sum(n)*100,1), total=sum(n)) |>
         ungroup() |> filter(total>=100)
 
@@ -585,13 +581,9 @@ server_profile <- function(id, app_data) {
                   .groups="drop") |>
         arrange(desc(taux)) |> slice_head(n=1)
 
-      veh_mort <- d |>
-        filter(!is.na(categorie_vehicule),
-               as.character(categorie_vehicule)!="Non renseigné") |>
-        mutate(veh=as.character(categorie_vehicule)) |>
-        group_by(veh) |>
-        summarise(n=n(), taux=round(mean(gravite_accident=="Mortel",na.rm=TRUE)*100,1),
-                  .groups="drop") |>
+      veh_mort <- par_categorie(d) |>
+        group_by(veh=categorie_vehicule) |>
+        summarise(n=sum(nb), taux=round(sum(nb[grav=="Mortel"])/sum(nb)*100,1), .groups="drop") |>
         filter(n>=100) |> arrange(desc(taux)) |> slice_head(n=1)
 
       div(class="insight-box",
@@ -602,7 +594,7 @@ server_profile <- function(id, app_data) {
                   tags$b(paste0(pct_jeune,"%")),
                   " des accidents — tranche la plus surrepresentee"),
           tags$li("Les ", tags$b(age_mort$age),
-                  " ont le taux de mortalite le plus eleve : ",
+                  " ont le taux de mortalité le plus élevé : ",
                   tags$b(paste0(age_mort$taux,"%"))),
           if (nrow(veh_mort)>0)
             tags$li("Le ", tags$b(veh_mort$veh),
@@ -709,12 +701,9 @@ server_profile <- function(id, app_data) {
 
       } else if (trigger$source == "vehicule_gravite") {
         veh_sel <- trigger$key
-        d_veh <- d |>
-          dplyr::filter(as.character(categorie_vehicule) == veh_sel) |>
-          dplyr::summarise(
-            n=dplyr::n(),
-            mortels=sum(gravite_accident=="Mortel", na.rm=TRUE),
-            .groups="drop")
+        d_veh <- par_categorie(d) |>
+          dplyr::filter(categorie_vehicule == veh_sel) |>
+          dplyr::summarise(n=sum(nb), mortels=sum(nb[grav=="Mortel"]), .groups="drop")
         req(nrow(d_veh) > 0)
         taux_m      <- round(d_veh$mortels / d_veh$n * 100, 1)
         taux_global <- round(mean(d$gravite_accident=="Mortel", na.rm=TRUE)*100, 1)

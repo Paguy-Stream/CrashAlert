@@ -133,6 +133,7 @@ log_msg("Calcul de la catégorie véhicule dominante par accident...")
 .VEHICULE_CATEGORIES <- c(
   "01" = "Vélo",
   "02" = "Cyclomoteur", "30" = "Cyclomoteur",
+  "03" = "Voiturette",
   "31" = "Deux-roues motorisé", "32" = "Deux-roues motorisé",
   "33" = "Deux-roues motorisé", "34" = "Deux-roues motorisé",
   "41" = "Deux-roues motorisé", "42" = "Deux-roues motorisé", "43" = "Deux-roues motorisé",
@@ -145,18 +146,35 @@ log_msg("Calcul de la catégorie véhicule dominante par accident...")
   "50" = "EDP motorisé", "60" = "EDP non motorisé", "80" = "VAE"
 )
 
+# Catégorie principale = usager le plus vulnérable impliqué ; liste complète = catégories impliquées
+# Code 41 (tricycle a moteur <= 50 cm3) : classe Cyclomoteur par l'ONISR
+.VEHICULE_CATEGORIES["41"] <- "Cyclomoteur"
+.ORDRE_VULNERABILITE <- c("EDP non motorisé", "Vélo", "VAE", "EDP motorisé", "Cyclomoteur",
+                          "Deux-roues motorisé", "Voiturette", "Véhicule léger", "Véhicule utilitaire",
+                          "Tracteur agricole", "Transport en commun", "Poids lourd", "Autre")
+.cat_principale <- function(x) {
+  x <- x[!is.na(x)]
+  if (length(x) == 0) return(NA_character_)
+  .ORDRE_VULNERABILITE[.ORDRE_VULNERABILITE %in% x][1]
+}
+.cat_impliquees <- function(x) {
+  x <- unique(x[!is.na(x)])
+  if (length(x) == 0) return(NA_character_)
+  paste0("|", paste(.ORDRE_VULNERABILITE[.ORDRE_VULNERABILITE %in% x], collapse = "|"), "|")
+}
+
 profil_vehicule <- vehicules |>
   mutate(
     catv_pad = stringr::str_pad(as.character(catv), 2, pad = "0"),
     categorie_vehicule = ifelse(
       catv_pad %in% names(.VEHICULE_CATEGORIES),
       .VEHICULE_CATEGORIES[catv_pad],
-      "Autre"
-    )
+      ifelse(catv_pad %in% c("00", "-1"), NA_character_, "Autre"))
   ) |>
   group_by(Num_Acc) |>
   summarise(
-    categorie_vehicule = .mode_val(categorie_vehicule),
+    categories_impliquees = .cat_impliquees(categorie_vehicule),
+    categorie_vehicule = .cat_principale(categorie_vehicule),
     .groups = "drop"
   )
 
