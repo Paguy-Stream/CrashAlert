@@ -178,8 +178,8 @@ ui_profile <- function(id) {
           card_body(plotlyOutput(ns("age_mortalite"), height="280px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("person-fill-exclamation"), " Rôle du premier usager enregistré")),
-          card_body(plotlyOutput(ns("catu_pie"), height="280px"))
+          card_header(tagList(bs_icon("exclamation-triangle-fill"), " Gravit\u00e9 des accidents")),
+          card_body(plotlyOutput(ns("gravite_donut"), height="280px"))
         )
       ),
 
@@ -198,7 +198,7 @@ ui_profile <- function(id) {
 
       tags$div(class="mt-3"),
 
-      div(class="section-title", bs_icon("lightbulb-fill"), " Insights cles"),
+      div(class="section-title", bs_icon("lightbulb-fill"), " Insights cl\u00e9s"),
       uiOutput(ns("insights_box"))
       ),  # fin profile-main
       div(id = "profile-side-panel", class = "profile-panel",
@@ -483,6 +483,20 @@ server_profile <- function(id, app_data) {
           legend=list(orientation="h", y=-0.25),
           paper_bgcolor="transparent", plot_bgcolor="transparent",
           margin=list(t=5, b=80)) |> plotly::config(displayModeBar=FALSE)
+    })
+
+    output$gravite_donut <- renderPlotly({
+      d <- filtered(); req(nrow(d) > 0)
+      ordre <- c("Mortel", "Grave", "L\u00e9ger")
+      d <- d |> dplyr::filter(!is.na(gravite_accident)) |>
+        dplyr::mutate(grav = as.character(gravite_accident)) |> dplyr::count(grav)
+      d <- d[match(ordre, d$grav, nomatch = 0), ]
+      cols <- c("#e74c3c", "#f39c12", "#27ae60")[match(d$grav, ordre)]
+      plot_ly(d, labels = ~grav, values = ~n, type = "pie", hole = 0.4, sort = FALSE,
+              marker = list(colors = cols), textinfo = "percent", textposition = "inside") |>
+        layout(showlegend = TRUE, paper_bgcolor = "transparent", plot_bgcolor = "transparent",
+               margin = list(t = 20, b = 20), uniformtext = list(minsize = 11, mode = "hide")) |>
+        plotly::config(displayModeBar = FALSE)
     })
 
     output$catu_pie <- renderPlotly({
