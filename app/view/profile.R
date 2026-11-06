@@ -178,7 +178,7 @@ ui_profile <- function(id) {
           card_body(plotlyOutput(ns("age_mortalite"), height="280px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("exclamation-triangle-fill"), " Gravit\u00e9 des accidents")),
+          card_header(tagList(bs_icon("people-fill"), " Profil d\u2019\u00e2ge par v\u00e9hicule (% des accidents)")),
           card_body(plotlyOutput(ns("gravite_donut"), height="280px"))
         )
       ),
@@ -487,15 +487,27 @@ server_profile <- function(id, app_data) {
 
     output$gravite_donut <- renderPlotly({
       d <- filtered(); req(nrow(d) > 0)
-      ordre <- c("Mortel", "Grave", "L\u00e9ger")
-      d <- d |> dplyr::filter(!is.na(gravite_accident)) |>
-        dplyr::mutate(grav = as.character(gravite_accident)) |> dplyr::count(grav)
-      d <- d[match(ordre, d$grav, nomatch = 0), ]
-      cols <- c("#e74c3c", "#f39c12", "#27ae60")[match(d$grav, ordre)]
-      plot_ly(d, labels = ~grav, values = ~n, type = "pie", hole = 0.4, sort = FALSE,
-              marker = list(colors = cols), textinfo = "percent", textposition = "inside") |>
-        layout(showlegend = TRUE, paper_bgcolor = "transparent", plot_bgcolor = "transparent",
-               margin = list(t = 20, b = 20), uniformtext = list(minsize = 11, mode = "hide")) |>
+      ordre_age <- c("Moins de 18 ans","18-24 ans","25-34 ans","35-49 ans","50-64 ans","65 ans et plus")
+      d <- d |>
+        dplyr::filter(!is.na(categorie_vehicule), !is.na(tranche_age), as.character(tranche_age) != "Non renseign\u00e9") |>
+        dplyr::mutate(veh = as.character(categorie_vehicule), age = as.character(tranche_age)) |>
+        dplyr::count(veh, age) |> dplyr::group_by(veh) |> dplyr::filter(sum(n) >= 200) |>
+        dplyr::mutate(pct = round(n / sum(n) * 100, 1)) |> dplyr::ungroup()
+      req(nrow(d) > 0)
+      ages <- ordre_age[ordre_age %in% unique(d$age)]
+      cols <- c("#d6e4f7","#a9c6ec","#7aa5de","#4a7fc4","#2f5a9a","#1b3a6b")[match(ages, ordre_age)]
+      veh_ord <- names(sort(tapply(d$n, d$veh, sum)))
+      p <- plot_ly()
+      for (a in ages) {
+        da <- d[d$age == a, ]
+        p <- add_bars(p, data = da, x = ~pct, y = ~veh, name = a, orientation = "h",
+                      marker = list(color = cols[match(a, ages)]),
+                      hovertemplate = paste0("%{y}<br>", a, " : %{x} %<extra></extra>"))
+      }
+      p |> layout(barmode = "stack", xaxis = list(title = "% des accidents de la cat\u00e9gorie", range = c(0, 100)),
+                  yaxis = list(title = "", categoryorder = "array", categoryarray = veh_ord),
+                  legend = list(orientation = "h", y = -0.3), paper_bgcolor = "transparent",
+                  plot_bgcolor = "transparent", margin = list(t = 5, b = 60, l = 150)) |>
         plotly::config(displayModeBar = FALSE)
     })
 
