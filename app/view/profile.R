@@ -123,25 +123,25 @@ ui_profile <- function(id) {
     div(class = "profile-layout",
       div(class = "profile-main",
 
-      div(class="section-title", bs_icon("people-fill"), " Profil des accidentes"),
+      div(class="section-title", bs_icon("people-fill"), " Profil des accident\u00e9s"),
       layout_columns(
         col_widths=c(3,3,3,3), fill=FALSE,
-        value_box("Conducteurs",
+        value_box("Accidents mortels",
           textOutput(ns("kpi_conducteurs"), inline=TRUE),
-          showcase=bs_icon("car-front-fill"), theme="primary",
-          p(class="mb-0 text-muted", style="font-size:11px;", "% des accidents concernés")),
+          showcase=bs_icon("exclamation-triangle-fill"), theme="primary",
+          p(class="mb-0", style="font-size:11px;color:rgba(255,255,255,.85);", "part des accidents mortels")),
         value_box("Hommes",
           textOutput(ns("kpi_hommes"), inline=TRUE),
           showcase=bs_icon("gender-male"), theme="primary",
-          p(class="mb-0 text-muted", style="font-size:11px;", "sexe dominant")),
+          p(class="mb-0", style="font-size:11px;color:rgba(255,255,255,.85);", "sexe dominant")),
         value_box("18-34 ans",
           textOutput(ns("kpi_jeunes"), inline=TRUE),
           showcase=bs_icon("person-fill-exclamation"), theme="warning",
-          p(class="mb-0 text-muted", style="font-size:11px;", "tranche la + accidentee")),
-        value_box("75+ ans mortalité",
+          p(class="mb-0 text-muted", style="font-size:11px;", "part des accidents (tranche dominante)")),
+        value_box("65+ ans mortalit\u00e9",
           textOutput(ns("kpi_seniors"), inline=TRUE),
           showcase=bs_icon("person-fill"), theme="danger",
-          p(class="mb-0 text-muted", style="font-size:11px;", "taux mortalité seniors"))
+          p(class="mb-0", style="font-size:11px;color:rgba(255,255,255,.85);", "taux de mortalit\u00e9 des 65 ans et plus"))
       ),
       layout_columns(
         col_widths=c(6,6), fill=FALSE,
@@ -149,22 +149,22 @@ ui_profile <- function(id) {
           uiOutput(ns("kpi_mode_title")),
           textOutput(ns("kpi_mode_pct"), inline=TRUE),
           showcase=bs_icon("bicycle"), theme="success",
-          p(class="mb-0 text-muted", style="font-size:11px;", "mode le plus accidente")),
-        value_box("Onglet recommande",
+          p(class="mb-0", style="font-size:11px;color:rgba(255,255,255,.85);", "cat\u00e9gorie la plus fr\u00e9quente")),
+        value_box("Onglet recommand\u00e9",
           uiOutput(ns("kpi_onglet_rec")),
           showcase=bs_icon("arrow-right-circle-fill"), theme="info",
-          p(class="mb-0 text-muted", style="font-size:11px;", "selon votre selection"))
+          p(class="mb-0 text-muted", style="font-size:11px;", "selon votre s\u00e9lection"))
       ),
 
-      div(class="section-title", bs_icon("gender-ambiguous"), " Genre & Age"),
+      div(class="section-title", bs_icon("gender-ambiguous"), " Genre & \u00e2ge"),
       layout_columns(
         col_widths=c(5,7),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("gender-ambiguous"), " Sexe & gravite")),
+          card_header(tagList(bs_icon("gender-ambiguous"), " Sexe & gravit\u00e9")),
           card_body(plotlyOutput(ns("sexe_gravite"), height="300px"))
         ),
         card(full_screen=TRUE,
-          card_header(tagList(bs_icon("bar-chart"), " Accidents par tranche d age")),
+          card_header(tagList(bs_icon("bar-chart"), " Accidents par tranche d\u2019\u00e2ge")),
           card_body(plotlyOutput(ns("age_bar"), height="300px"))
         )
       ),
@@ -395,6 +395,12 @@ server_profile <- function(id, app_data) {
                   margin=list(t=5)) |> plotly::config(displayModeBar=FALSE)
     })
 
+    # KPI 1 : part des accidents mortels (remplace "100 % conducteurs", sans information)
+    output$kpi_conducteurs <- renderText({
+      d <- filtered(); req(nrow(d) > 0)
+      paste0(round(mean(as.character(d$gravite_accident) == "Mortel", na.rm = TRUE) * 100, 1), " %")
+    })
+
     output$age_bar <- renderPlotly({
       req(nrow(filtered()) > 0)
       d <- filtered() |>
@@ -418,8 +424,8 @@ server_profile <- function(id, app_data) {
                              name=gravites[i], marker=list(color=couleurs[i]))
         }
       }
-      ordre_age2 <- c("0-17 ans","18-24 ans","25-34 ans","35-44 ans",
-                      "45-54 ans","55-64 ans","65-74 ans","65 ans et plus")
+      ordre_age2 <- c("Moins de 18 ans","18-24 ans","25-34 ans","35-49 ans",
+                      "50-64 ans","65 ans et plus")
       p <- plotly::event_register(p, "plotly_click")
       p |> layout(barmode="stack",
                   xaxis=list(title="", tickangle=-30,
@@ -557,9 +563,9 @@ server_profile <- function(id, app_data) {
       p_secu <- plot_ly(d, x=~n, y=~secu_label, type="bar", orientation="h", source="secu",
         marker=list(color=~.col),
         text=~paste0(round(n/1000,1),"k | ",taux,"%"),
-        textposition="outside")
+        textposition="outside", cliponaxis=FALSE)
       p_secu <- plotly::event_register(p_secu, "plotly_click")
-      p_secu |> layout(xaxis=list(title="Nb accidents"),
+      p_secu |> layout(xaxis=list(title="Nb accidents", range=c(0, max(d$n)*1.3)),
                yaxis=list(title=""),
                paper_bgcolor="transparent", plot_bgcolor="transparent",
                margin=list(t=5,r=80,l=160)) |> plotly::config(displayModeBar=FALSE)
@@ -597,7 +603,7 @@ server_profile <- function(id, app_data) {
                   tags$b(paste0(age_mort$taux,"%"))),
           if (nrow(veh_mort)>0)
             tags$li("Le ", tags$b(veh_mort$veh),
-                    " est le vehicule le plus mortel : ",
+                    " est le v\u00e9hicule le plus mortel : ",
                     tags$b(paste0(veh_mort$taux,"%")))
         )
       )
