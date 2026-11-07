@@ -136,6 +136,20 @@ if (!file.exists(f_cat) || is.na(col_tues) || !"categories_impliquees" %in% name
   chk("ONISR 2025 : tués par catégorie (11 catégories)", calc[, 3], rc$onisr_tues)
 }
 
+# ── D. Taux pour 1 000 habitants (référence externe : L'Internaute, accidents 2024) ──
+cat("\n== D. Accidents pour 1 000 habitants (2024, référence L'Internaute) ==\n")
+f_pop <- "data_propre/population_departements.rds"
+if (!file.exists(f_pop) || !"dep" %in% names(d)) {
+  cat("Contrôle D ignoré : table de population ou colonne dep absente\n")
+} else {
+  pp <- readRDS(f_pop)
+  ref_int <- c("75" = 1.98, "92" = 1.51, "93" = 1.59, "973" = 2.19, "971" = 1.61, "13" = 1.02)
+  dd <- d[d$annee == 2024, ]
+  mine <- sapply(names(ref_int), function(dp) sum(dd$dep == dp) / pp$pop_municipale[pp$dep == dp] * 1000)
+  chk("Accidents / 1 000 hab. 2024 : CrashAlert = L'Internaute (6 départements, ±0,06)",
+      round(unname(mine), 2), unname(ref_int), tol = 0.06)
+}
+
 out <- do.call(rbind, res)
 cat(sprintf("\nBilan : %d contrôles, %d OK, %d en écart\n", nrow(out), sum(out$ok), sum(!out$ok)))
 write.csv(out, sprintf("../controle_coherence_%s.csv", Sys.Date()), row.names = FALSE, fileEncoding = "UTF-8")

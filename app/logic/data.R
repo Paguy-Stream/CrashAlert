@@ -21,7 +21,8 @@ load_data <- function(path = "data_propre") {
     agg_evol_dept      = readRDS(file.path(path, "agg_evol_dept.rds")),
     agg_evol_france    = readRDS(file.path(path, "agg_evol_france.rds")),
     features_clustering = readRDS(file.path(path, "features_clustering.rds")),
-    acm_result         = readRDS(file.path(path, "acm_result.rds"))
+    acm_result         = readRDS(file.path(path, "acm_result.rds")),
+    population_departements = readRDS(file.path(path, "population_departements.rds"))
   )
 }
 

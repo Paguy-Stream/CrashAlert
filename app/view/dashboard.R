@@ -299,7 +299,16 @@ ui_dashboard <- function(id) {
       # ── Top 10 départements ────────────────────────────────────────────────
       card(full_screen=TRUE,
         card_header(tagList(bs_icon("trophy-fill"), " Top 15 départements — accidentalité")),
-        card_body(DTOutput(ns("top_dept")))
+        card_body(
+          shiny::radioButtons(ns("top_critere"), NULL, inline = TRUE,
+            choices = c("Classer par nombre d\u2019accidents" = "vol",
+                        "Classer par accidents pour 1 000 hab." = "taux")),
+          DTOutput(ns("top_dept"))
+        ),
+        bslib::card_footer(
+          shiny::p(class = "text-muted mb-0", style = "font-size:11px;",
+            "Taux annuels moyens sur la p\u00e9riode s\u00e9lectionn\u00e9e, rapport\u00e9s \u00e0 la population municipale INSEE au 1er janvier 2023. Classement par taux : d\u00e9partements d\u2019au moins 50 accidents. Pas de taux pour Mayotte ni les collectivit\u00e9s d\u2019outre-mer sans population de r\u00e9f\u00e9rence.")
+        )
       )
     )
   )
@@ -620,8 +629,12 @@ server_dashboard <- function(id, app_data, app_filters) {
 
     # Top 15 départements
     output$top_dept <- renderDT({
-      d <- filtered() |>
-        group_by(departement, region) |>
+      d0 <- filtered()
+      n_ans <- max(1, dplyr::n_distinct(d0$annee))
+      crit <- if (is.null(input$top_critere)) "vol" else input$top_critere
+      pop <- app_data$population_departements[, c("dep", "pop_municipale")]
+      d <- d0 |>
+        group_by(dep, departement, region) |>
         summarise(
           nb_accidents   = n(),
           nb_mortels     = sum(gravite_accident == "Mortel", na.rm = TRUE),
@@ -629,28 +642,32 @@ server_dashboard <- function(id, app_data, app_filters) {
           taux_mortalite = round(sum(gravite_accident == "Mortel", na.rm = TRUE) / n() * 100, 2),
           .groups = "drop"
         ) |>
-        mutate(classe_gravite = dplyr::case_when(
-          taux_mortalite >= 10 ~ "Très élevée",
-          taux_mortalite >=  5 ~ "Élevée",
-          taux_mortalite >=  2 ~ "Moyenne",
-          TRUE                 ~ "Faible"
-        )) |>
-        arrange(desc(nb_accidents)) |> slice_head(n=15) |>
-        select(departement, region, nb_accidents, nb_mortels,
-               nb_graves, taux_mortalite, classe_gravite) |>
-        rename(Département=departement, Région=region,
-               Accidents=nb_accidents, Mortels=nb_mortels,
-               Graves=nb_graves, `Taux mortalité (%)`=taux_mortalite,
-               `Classe gravité`=classe_gravite)
-      datatable(d, rownames=FALSE,
-        options=list(pageLength=15, dom="t", ordering=TRUE),
-        class="table table-hover table-sm") |>
-        formatStyle("Taux mortalité (%)",
-          background=styleInterval(c(5,8,12),
-            c("#d4edda","#fff3cd","#ffd6a5","#f8d7da"))) |>
-        formatStyle("Classe gravité",
-          color=styleInterval(0, c("white","white")),
-          backgroundColor=styleInterval(0, c("white","white")))
+        dplyr::left_join(pop, by = "dep") |>
+        mutate(acc_1000  = round(nb_accidents / n_ans / pop_municipale * 1000, 2),
+               mort_100k = round(nb_mortels   / n_ans / pop_municipale * 1e5, 2),
+               classe_gravite = dplyr::case_when(
+                 taux_mortalite >= 10 ~ "Tr\u00e8s \u00e9lev\u00e9e",
+                 taux_mortalite >=  5 ~ "\u00c9lev\u00e9e",
+                 taux_mortalite >=  2 ~ "Moyenne",
+                 TRUE                 ~ "Faible"))
+      d <- if (crit == "taux") {
+        d |> dplyr::filter(!is.na(acc_1000), nb_accidents >= 50) |> arrange(desc(acc_1000))
+      } else arrange(d, desc(nb_accidents))
+      d <- d |> slice_head(n = 15) |>
+        select(departement, region, nb_accidents, acc_1000, nb_mortels, mort_100k,
+               nb_graves, taux_mortalite, classe_gravite)
+      names(d) <- c("D\u00e9partement", "R\u00e9gion", "Accidents", "Accidents / 1 000 hab. / an",
+                    "Mortels", "Mortels / 100 000 hab. / an", "Graves",
+                    "Taux mortalit\u00e9 (%)", "Classe gravit\u00e9")
+      datatable(d, rownames = FALSE,
+        options = list(pageLength = 15, dom = "t", ordering = TRUE),
+        class = "table table-hover table-sm") |>
+        formatStyle("Taux mortalit\u00e9 (%)",
+          background = styleInterval(c(5, 8, 12),
+            c("#d4edda", "#fff3cd", "#ffd6a5", "#f8d7da"))) |>
+        formatStyle("Classe gravit\u00e9",
+          color = styleInterval(0, c("white", "white")),
+          backgroundColor = styleInterval(0, c("white", "white")))
     })
 
     output$dl_csv <- downloadHandler(
